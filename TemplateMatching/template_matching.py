@@ -5,9 +5,9 @@ import os
 import pandas as pd
 import time
 
-# THRESHOLDs (tweek these!)
-THRESHOLD = 0.75
-IOU_THRESHOLD = 0.05
+# params (tweek these!)
+THRESHOLD = 0.7
+IOU_THRESHOLD = 0.2
 FILETYPE = ".jpg"
 METHODS = [cv2.TM_CCOEFF_NORMED] 
 
@@ -31,7 +31,6 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
     """
     teeth = []
     for template in TEMPLATES:
-        start_time = time.time()
         # load template
         t = cv2.imread(os.path.join("template", template),cv2.IMREAD_GRAYSCALE)
 
@@ -74,10 +73,11 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
         data['score'].append(pt[4])
         data['match'].append(pt[5])
     df = pd.DataFrame(data=data)
-    # df.to_csv(f"{IMG_NAME}_processed.csv")
+    df.sort_values(by=['x'], inplace=True)
+    df.to_csv(f"{IMG_NAME[:len(IMG_NAME)-4]}_processed.csv")
     # plt.scatter(data['x'], data['y'])
     # plt.show()
-    cv2.imwrite(f"{IMG_NAME}{template[:len(template)-4]}_processed{FILE_TYPE}", img)
+    cv2.imwrite(f"{IMG_NAME[:len(IMG_NAME)-4]}_processed{FILE_TYPE}", img)
 
 
 def intersection_over_union(p1, p2):
@@ -102,10 +102,12 @@ def intersection_over_union(p1, p2):
 
 
 if __name__ == "__main__":
+    start = time.time()
     images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-4:] == FILETYPE]
     templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template")) if file[len(file)-4:] == FILETYPE]
     for image in images:
         template_matching(image, templates, FILETYPE)
+    print("time: ", time.time()-start, "seconds")
 
 
 
