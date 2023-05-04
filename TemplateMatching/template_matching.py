@@ -6,8 +6,8 @@ import pandas as pd
 import time
 
 # THRESHOLDs (tweek these!)
-THRESHOLD = 0.8
-IOU_THRESHOLD = 0.1
+THRESHOLD = 0.75
+IOU_THRESHOLD = 0.05
 FILETYPE = ".jpg"
 METHODS = [cv2.TM_CCOEFF_NORMED] 
 
@@ -17,14 +17,13 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
     images labelled with the suspected teeth are also generated for reference.
     
     Note:
-    1. This function detects objects similar in size to the template provided. It does not scale the template
-    in any way and find matches that way. Please ensure that the target object is similar in size to how it 
-    appears in the image
+    1. This function detects objects similar in size to the list of templates provided. It does not scale the template
+    so make sure that the target object is similar in size to how it appears in the image
     2. Possible algorithms for template matching: [cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED, cv2.TM_CCORR, 
-    cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]. Please note that the current code is taylored 
+    cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]. The current code is taylored 
     to cv2.TM_CCOEFF_NORMED
-    3. The folder structure needed for this code to run is an img and template folder in the same directory,
-    where the img folder has all the images
+    3. The folder structure assumed is an img and template folder in the same directory,
+    where the img folder has all the images, and template folder all the templates
 
     Useful Links:
     https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html (a tutorial for template matching)
@@ -60,11 +59,11 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
                 
                 # if no intersection, add to list of teeth
                 if not intersect:
-                    new_tooth = [pt[0], pt[1], w, h, result[pt[1]][pt[0]]]
+                    new_tooth = [pt[0], pt[1], w, h, result[pt[1]][pt[0]], template]
                     teeth.append(new_tooth)
         
 
-    data = {'x':[],'y':[], 'w':[],'h':[], 'score':[]}
+    data = {'x':[],'y':[], 'w':[],'h':[], 'score':[], 'match':[]}
     img = cv2.imread(os.path.join("img", IMG_NAME), cv2.IMREAD_GRAYSCALE)
     for pt in teeth:
         cv2.rectangle(img, (pt[0], pt[1]), (pt[0] + pt[2], pt[1] + pt[3]), (255,255,0), 2)
@@ -73,8 +72,9 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
         data['w'].append(pt[2])
         data['h'].append(pt[3])
         data['score'].append(pt[4])
+        data['match'].append(pt[5])
     df = pd.DataFrame(data=data)
-    df.to_csv(f"{IMG_NAME}_processed.csv")
+    # df.to_csv(f"{IMG_NAME}_processed.csv")
     # plt.scatter(data['x'], data['y'])
     # plt.show()
     cv2.imwrite(f"{IMG_NAME}{template[:len(template)-4]}_processed{FILE_TYPE}", img)
