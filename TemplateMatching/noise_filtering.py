@@ -4,13 +4,16 @@ import numpy as np
 import pandas as pd
 
 
-def continuity_filter(csv):
-    GRAD_THRESHOLD = 5
-    GRAD_EVEN_THRESHOLD = 50
-    SMOOTH_THRESHOLD = 0.5
-    SMOOTH_EVEN_THRESHOLD = 5
+def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 50,
+               smooththreshold: float = 0.5, smootheventhreshold: float = 5,):
+    GRAD_THRESHOLD = gradthreshold
+    GRAD_EVEN_THRESHOLD = gradeventhreshold
+    SMOOTH_THRESHOLD = smooththreshold
+    SMOOTH_EVEN_THRESHOLD = smootheventhreshold
+
     WIDTH_SIZE = 15
     HEIGHT_SIZE = 7
+
     df = pd.read_csv(csv)
     df['x'] = df['x']+df['w']/2
     df['y'] = df['y']+df['h']/2
@@ -22,7 +25,6 @@ def continuity_filter(csv):
     df['gradient_even'] = np.gradient(y)
     df['smoothness_even'] = np.gradient(df['gradient'])
 
-    plt.style.use('bmh')
     fig, ((ax1, ax2, ax3, ax4),(ax5, ax6, ax7, ax8), (ax9, ax10, ax11, ax12)) = plt.subplots(3, 4)
     fig.set_figwidth(WIDTH_SIZE)
     fig.set_figheight(HEIGHT_SIZE)

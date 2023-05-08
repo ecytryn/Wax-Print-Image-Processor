@@ -23,13 +23,12 @@ def solve(csv):
     solved = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
     (A,B,C,D,E) = solved
     ends = np.roots([A, IMAGE_HEIGHT*B+D, -1+C*IMAGE_HEIGHT**2+E*IMAGE_HEIGHT])
-    print(ends)
 
-    # fit = plot_hyperbola_linear(ends[0], ends[-1], solved)
+    # fit = plot_hyperbola_linear(min(ends), max(ends), solved)
     fit = equidistant_set(min(ends), max(ends), solved)
     
     # img = cv2.imread(f'{csv[:len(csv)-4]}.jpg')
-    img = cv2.imread(f'test.jpg')
+    img = cv2.imread(f'test2.jpg')
     fig, ax = plt.subplots()
     fig2, intensity_ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
@@ -60,9 +59,9 @@ def solve(csv):
     intensity_ax.bar(range(len(gradient_graph)),gradient_graph, color='k', align='center', width=1.0, label="fit")
 
     fig.savefig(f"{csv[0:len(csv)-4]}_fitted.png")
-    fig2.savefig(f"gradient_graph.png")
-    cv2.imwrite("test.png", np.array(projected_img))
-    cv2.imwrite("gradient.png", np.array(gradient_map))
+    fig2.savefig(f"gradient_graph2.png")
+    cv2.imwrite("test2.png", np.array(projected_img))
+    cv2.imwrite("gradient2.png", np.array(gradient_map))
     # return(solved, x[0], x[-1], fit[0], fit[1])
 
 def equidistant_set(start, end, coeff):
@@ -96,7 +95,6 @@ def equidistant_set(start, end, coeff):
         assert len(roots) == 2, "more than 2 roots found for unit circle"
         r1x, r1y = prev_x+np.cos(roots[0]), prev_y+np.sin(roots[0])
         r2x, r2y = prev_x+np.cos(roots[1]), prev_y+np.sin(roots[1])
-        print(r1x, r2x)
         if r1x > r2x:
             result[0].append(r1x)
             result[1].append(r1y)
@@ -129,4 +127,4 @@ def plot_hyperbola_linear(start, end, coeff):
 if __name__ == "__main__":
     data = [file for file in os.listdir(os.getcwd()) if file[len(file)-4:] == ".csv"]
     for csv in data[0:1]:
-        solve(csv)
+        solve("01_20_2023 LG 282_processed.csv")

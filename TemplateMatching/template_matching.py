@@ -6,12 +6,9 @@ import pandas as pd
 import time
 
 # params (tweek these!)
-THRESHOLD = 0.75
-IOU_THRESHOLD = 0.05
-FILETYPE = ".jpg"
 METHODS = [cv2.TM_CCOEFF_NORMED] 
 
-def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
+def template_matching(IMG_NAME, TEMPLATES, THRESHOLD, IOU_THRESHOLD, plot):
     """ This function reads all jpg from the img folder and runs multi-template matching on it.
     The "coordinates" for teeth (top-left pixel of it) is outputted in a CSV file. Copies of the 
     images labelled with the suspected teeth are also generated for reference.
@@ -74,10 +71,22 @@ def template_matching(IMG_NAME, TEMPLATES, FILE_TYPE):
         data['match'].append(pt[5])
     df = pd.DataFrame(data=data)
     df.sort_values(by=['x'], inplace=True)
-    df.to_csv(f"{IMG_NAME[:len(IMG_NAME)-4]}_processed.csv")
-    # plt.scatter(data['x'], data['y'])
-    # plt.show()
-    cv2.imwrite(f"{IMG_NAME[:len(IMG_NAME)-4]}_processed{FILE_TYPE}", img)
+
+
+    if plot:
+        plt.scatter(data['x'], data['y'])
+        plt.show()
+
+
+    # saves to coordinates saves marked image in appropriate folders
+    current_dir = os.getcwd()
+    processed_dir = os.path.join(current_dir,"processed")
+    os.chdir(os.path.join(processed_dir,"match data"))
+    df.to_csv(f"{IMG_NAME[:len(IMG_NAME)-4]}_match.csv")
+    os.chdir(os.path.join(processed_dir,"match visualization"))
+    cv2.imwrite(f"{IMG_NAME[:len(IMG_NAME)-4]}_match.jpg", img)
+    os.chdir(current_dir)
+
 
 
 def intersection_over_union(p1, p2):
@@ -97,46 +106,3 @@ def intersection_over_union(p1, p2):
     # score of overlap
     iou = interArea / float(box1Area + box2Area - interArea)
     return iou 
-
-
-
-
-if __name__ == "__main__":
-    start = time.time()
-    images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-4:] == FILETYPE]
-    templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template")) if file[len(file)-4:] == FILETYPE]
-    for image in images:
-        template_matching(image, templates, FILETYPE)
-    print("time: ", time.time()-start, "seconds")
-
-
-
-
-# code for single template matching
-    # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-    # if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-    #     location = min_loc
-    # else:
-    #     location = max_loc
-    # bottom_right = (location[0] + w, location[1] + h)
-
-# code for plotting
-    #plt.subplot(121),plt.imshow(result,cmap = 'gray')
-    #plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
-    #plt.subplot(122),plt.imshow(img2,cmap = 'gray')
-    #plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
-    #plt.suptitle(method)
-    #plt.show()
-
-
-# df = pd.read_csv("01_05_2021.jpg_processed.csv")
-# data = []
-# for i in range(df.shape[0]):
-#     data.append([df['x'][i], df['y'][i], df['w'][i], df['h'][i], df['score'][i]])
-
-# for i in data:
-#     for j in data:
-#         if (intersection_over_union(i, j) > IOU_THRESHOLD and i != j):
-#             print("point 1", i)
-#             print("point 2", j)
-#             print("\n")

@@ -27,8 +27,8 @@ def project_one(x, y, coeff):
     normal_x = []
     normal_y = []
 
-    c = 50
-    while c >= -50:
+    c = 100
+    while c >= -100:
         normal_x.append(int(x+c*normal_h[0]))
         normal_y.append(int(y+c*normal_h[1]))
         c -= 1
