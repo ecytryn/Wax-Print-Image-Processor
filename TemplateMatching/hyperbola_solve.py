@@ -105,9 +105,17 @@ def equidistant_set(start, end, coeff):
     prev_y = start_y
 
     while prev_x < end:
-        root = fsolve(func, 0, [prev_x, prev_y, coeff])
-        curr_x, curr_y = prev_x+np.cos(root[0]), prev_y+np.sin(root[0])
-        assert root[0] < np.pi/2 and root[0] > -np.pi/2, f"Equidistant Points Error: x_0 = {prev_x}, y_0 = {prev_y}, x_1={curr_x}, x_2={curr_y}\n(A,B,C,D,E) = {coeff}"
+        r1 = fsolve(func, np.pi/4, [prev_x, prev_y, coeff])
+        r2 = fsolve(func, -np.pi/4, [prev_x, prev_y, coeff])
+
+        if np.cos(r1[0])>0:
+            curr_x, curr_y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
+        elif np.cos(r2[0])>0:
+            curr_x, curr_y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
+        else:
+            curr_1x, curr_1y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
+            curr_2x, curr_2y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
+            assert r1[0] < np.pi/2 and r1[0] > -np.pi/2, f"Equidistant Points Error: r1x_0 = {prev_x}, r1y_0 = {prev_y}, r1x_1={curr_1x}, r1x_2={curr_1y}\nr2x_0 = {prev_x}, r2y_0 = {prev_y}, r2x_1={curr_2x}, r2x_2={curr_2y}\n(A,B,C,D,E) = {coeff}"
 
         result[0].append(curr_x)
         result[1].append(curr_y)

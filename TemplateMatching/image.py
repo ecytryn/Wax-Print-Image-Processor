@@ -98,10 +98,10 @@ if __name__ == "__main__":
     FILETYPE = ".jpg"
     assert os.path.isdir(os.path.join(os.getcwd(),'img')), 'img directory does not exist'
     images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-len(FILETYPE):] == FILETYPE]
-    print("==================================================")
+    print("============================================================")
     for image in images:
         process_img = ImageProcessor(image, FILETYPE)
         process_img.match(True)
         process_img.filter(True)
         process_img.fit_project(True, 10)
-        print("==================================================")
+        print("============================================================")
