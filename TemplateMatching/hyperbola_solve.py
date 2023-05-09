@@ -100,36 +100,25 @@ def equidistant_set(start, end, coeff):
     start_roots = [r for r in np.roots([quadratic[0], linear[0], constant[0]]) if r >= 0]
     start_y = min(start_roots)
 
-
-
     result = ([],[])
-    prev_root = 0
     prev_x = start
     prev_y = start_y
 
-    for i in range(100):
-        base_root = fsolve(func, i)
-        check = fsolve(func, base_root, prev_x, prev_y)
-        if (check[0] < base_root[0]):
-            prev_root = base_root[0] + np.pi
-            break
-        elif i == 99:
-            raise RuntimeError(f"Suitable equidistant arclength points cannot be found")
-
     while prev_x < end:
-        root = fsolve(func, prev_root, prev_x, prev_y, coeff)
-        prev_root = root
-        rx, ry = prev_x+np.cos(root[0]), prev_y+np.sin(root[0])
+        root = fsolve(func, 0, [prev_x, prev_y, coeff])
+        curr_x, curr_y = prev_x+np.cos(root[0]), prev_y+np.sin(root[0])
+        assert root[0] < np.pi/2 and root[0] > -np.pi/2, f"Equidistant Points Error: x_0 = {prev_x}, y_0 = {prev_y}, x_1={curr_x}, x_2={curr_y}\n(A,B,C,D,E) = {coeff}"
 
-        result[0].append(rx)
-        result[1].append(ry)
-        prev_x = rx
-        prev_y = ry
+        result[0].append(curr_x)
+        result[1].append(curr_y)
+        prev_x = curr_x
+        prev_y = curr_y
     
     return result
     
 
-def func(t, prev_x, prev_y, coeff):
+def func(t, args):
+    (prev_x, prev_y, coeff) = args
     (A,B,C,D,E) = coeff
     return A*(prev_x+np.cos(t))**2+B*(prev_x+np.cos(t))*(prev_y+np.sin(t))+C*(prev_y+np.sin(t))**2+D*(prev_x+np.cos(t))+E*(prev_y+np.sin(t))-1
 
