@@ -3,21 +3,23 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import noise_filtering
 import cv2
 import project_1D
-from PIL import Image
 from scipy.optimize import fsolve
 
 
 
 
-def solve(csv):
-    IMAGE_HEIGHT = 1944
+def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter):
 
-    filtered = noise_filtering.continuity_filter(csv)
-    x = filtered[0].to_numpy()
-    y = filtered[1].to_numpy()
+    current_dir = os.getcwd()
+    os.chdir(os.path.join(current_dir,'processed', "filter data"))
+    df = pd.read_csv(f"{CSV[:len(CSV)-4]}_{filter}.csv")
+    os.chdir(current_dir)
+
+    x = df["x"].to_numpy()
+    y = df["y"].to_numpy()
+
     matrix_t = [x**2, x*y, y**2, x, y]
     matrix = np.transpose(matrix_t)
     solved = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
@@ -25,15 +27,25 @@ def solve(csv):
     ends = np.roots([A, IMAGE_HEIGHT*B+D, -1+C*IMAGE_HEIGHT**2+E*IMAGE_HEIGHT])
 
     # fit = plot_hyperbola_linear(min(ends), max(ends), solved)
-    fit = equidistant_set(min(ends), max(ends), solved)
+    try: 
+        fit = equidistant_set(min(ends), max(ends), solved)
+    except RuntimeError as err:
+        raise RuntimeError(err)
     
     # img = cv2.imread(f'{csv[:len(csv)-4]}.jpg')
-    img = cv2.imread(f'test2.jpg')
+    img_path = os.path.join('img', f"{CSV[:len(CSV)-4]}{IMG_TYPE}")
+    img = cv2.imread(img_path)
     fig, ax = plt.subplots()
     fig2, intensity_ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
     
     projected_img = []
+
+    ax.plot(fit[0], fit[1], '.-r', label="fit")
+    target = os.path.join(current_dir,"processed", "fit visualization")
+    os.chdir(target)
+    fig.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    os.chdir(current_dir)
 
     for i in range(len(fit[0])):
         projection = project_1D.project_one(fit[0][i], fit[1][i], solved)
@@ -47,22 +59,33 @@ def solve(csv):
         projected_img.append(temp)
         ax.plot(projection[0], projection[1], '.-y', label="projection")
 
-
-    ax.plot(fit[0], fit[1], '.-r', label="fit")
-
-    gradient = np.mean(projected_img, axis=1)
-    gradient_graph = [255-g[0] for g in gradient]
-    gradient_map = []
+    avg_intensity = np.mean(projected_img, axis=1)
+    avg_intensity_graph = [255-i[0] for i in avg_intensity]
+    avg_intensity_map = []
     for _ in range(50):
-        gradient_map.append(gradient)
+        avg_intensity_map.append(avg_intensity)
 
-    intensity_ax.bar(range(len(gradient_graph)),gradient_graph, color='k', align='center', width=1.0, label="fit")
+    intensity_ax.bar(range(len(avg_intensity_graph)),avg_intensity_graph, color='k', align='center', width=1.0, label="fit")
 
-    fig.savefig(f"{csv[0:len(csv)-4]}_fitted.png")
-    fig2.savefig(f"gradient_graph2.png")
-    cv2.imwrite("test2.png", np.array(projected_img))
-    cv2.imwrite("gradient2.png", np.array(gradient_map))
-    # return(solved, x[0], x[-1], fit[0], fit[1])
+    target = os.path.join(current_dir,"processed", "projection sampling")
+    os.chdir(target)
+    fig.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    os.chdir(current_dir)
+
+    target = os.path.join(current_dir,"processed", "projection graphed")
+    os.chdir(target)
+    fig2.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    os.chdir(current_dir)
+
+    target = os.path.join(current_dir,"processed", "projection")
+    os.chdir(target)
+    cv2.imwrite(f"{CSV[0:len(CSV)-4]}.jpg", np.array(projected_img))
+    os.chdir(current_dir)
+
+    target = os.path.join(current_dir,"processed", "projection gradient")
+    os.chdir(target)
+    cv2.imwrite(f"{CSV[0:len(CSV)-4]}.jpg", np.array(avg_intensity_map))
+    os.chdir(current_dir)
 
 def equidistant_set(start, end, coeff):
 
@@ -106,6 +129,9 @@ def equidistant_set(start, end, coeff):
             prev_x = r2x
             prev_y = r2y
 
+        if len(result[0]) > 5000:
+            raise RuntimeError("Hyperbola Fit Possibly Incorrect - Large Equidistance Arclength Set")
+    
     return result
     
 
@@ -123,8 +149,3 @@ def plot_hyperbola_linear(start, end, coeff):
                 result[0].append(x[i])
                 result[1].append(r)
     return result
-
-if __name__ == "__main__":
-    data = [file for file in os.listdir(os.getcwd()) if file[len(file)-4:] == ".csv"]
-    for csv in data[0:1]:
-        solve("01_20_2023 LG 282_processed.csv")

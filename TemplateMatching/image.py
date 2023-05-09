@@ -5,12 +5,12 @@ import time
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+import warnings
 
 #helper functions
 import template_matching
 import noise_filtering
 import hyperbola_solve
-import project_1D
 
 class ImageProcessor:
     
@@ -22,10 +22,11 @@ class ImageProcessor:
             self.file_type = '.jpg'
         self.name = img_name[:len(img_name)-4]
 
-        assert os.path.isdir('img'), 'img directory does not exist'
+        assert os.path.isfile(os.path.join(os.getcwd(),'img', img_name)), f"'{img_name}' does not exist"
+        
         self.image = cv2.imread(os.path.join('img', img_name), cv2.IMREAD_GRAYSCALE)
-        self.width = self.image.shape[0]
-        self.height = self.image.shape[1]
+        self.width = self.image.shape[1]
+        self.height = self.image.shape[0]
 
         #set the theme for matplotlib plots
         if plot_style:
@@ -39,9 +40,10 @@ class ImageProcessor:
         self.make_dir("match visualization")
         self.make_dir("match data")
         self.make_dir("filter visualization")
+        self.make_dir("filter data")
         self.make_dir("fit visualization")
         self.make_dir("projection")
-        self.make_dir("projection_sampling")
+        self.make_dir("projection sampling")
         self.make_dir("projection gradient")
         self.make_dir("projection graphed")
         os.chdir(current)
@@ -51,40 +53,53 @@ class ImageProcessor:
         if not os.path.isdir(name):
             os.mkdir(name)
 
-    def match(self, displayTime: bool = False, plot: bool = False):
+    def match(self, displayTime: bool = False):
         start_time = time.time()
         templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template")) if file[len(file)-4:] == self.file_type]
-        template_matching.template_matching(f"{self.name}{self.file_type}", templates, 0.75, 0.05, plot)
+        template_matching.template_matching(f"{self.name}{self.file_type}", templates, 0.75, 0.05)
         if displayTime:
             print(f"MATCH | '{self.name}{self.file_type}': {time.time()-start_time} s")
+        plt.close("all")
     
 
-    def filter(self, gradthreshold: float = 5, gradeventhreshold: float = 50,
-               smooththreshold: float = 0.5, smootheventhreshold: float = 5,
-               displayTime: bool = False, plot: bool = False):
+    def filter(self,displayTime: bool = False, 
+               gradthreshold: float = 5, gradeventhreshold: float = 50,
+               smooththreshold: float = 0.5, smootheventhreshold: float = 5):
         start_time = time.time()
-        noise_filtering.continuity_filter()
+        path = os.path.join('processed', "match data",f"{self.name}.csv")
+        assert os.path.isfile(path), f"'{self.name}.csv' does not exist"
+        noise_filtering.continuity_filter(f"{self.name}.csv", gradthreshold, gradeventhreshold, 
+                                          smooththreshold, smootheventhreshold)
         if displayTime:
-            print(f"FILTER | '{self.name}.{self.file_type}': {time.time()-start_time} s")
+            print(f"FILTER | '{self.name}{self.file_type}': {time.time()-start_time} s")
+        plt.close("all")
 
 
-    def fit(self, displayTime: bool = False, plot: bool = False):
+    def fit_project(self, displayTime: bool = False):
         start_time = time.time()
+        path = os.path.join('processed', "filter data",f"{self.name}.csv")
+        img_path = os.path.join('img', f"{self.name}{self.file_type}")
+        assert os.path.isfile(path), f"'{self.name}.csv' does not exist"
+        assert os.path.isfile(img_path), f"'{self.name}{self.file_type}' does not exist"
+        try:
+            hyperbola_solve.solve(f"{self.name}.csv", self.file_type, self.height, "grad")
+        except RuntimeError as err:
+            print(err)
+
         if displayTime:
-            print(f"FIT | '{self.name}.{self.file_type}': {time.time()-start_time} s")
+            print(f"FIT PROJECT | '{self.name}{self.file_type}': {time.time()-start_time} s")
+        plt.close("all")
 
 
-    def project(self, displayTime: bool = False, plot: bool = False):
-        start_time = time.time()
-        if displayTime:
-            print(f"PROJECT | '{self.name}.{self.file_type}': {time.time()-start_time} s")
-
-
-
+# suppresses warnings
+warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
     FILETYPE = ".jpg"
-    images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-4:] == FILETYPE]
+    assert os.path.isdir(os.path.join(os.getcwd(),'img')), 'img directory does not exist'
+    images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-len(FILETYPE):] == FILETYPE]
     for image in images:
-        processing = ImageProcessor(image, FILETYPE)
-        processing.match(True, False)
+        process_img = ImageProcessor(image, FILETYPE)
+        process_img.match(True)
+        process_img.filter(True)
+        process_img.fit_project(True)

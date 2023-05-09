@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 50,
+def continuity_filter(CSV, gradthreshold: float = 5, gradeventhreshold: float = 50,
                smooththreshold: float = 0.5, smootheventhreshold: float = 5,):
     GRAD_THRESHOLD = gradthreshold
     GRAD_EVEN_THRESHOLD = gradeventhreshold
@@ -14,16 +14,21 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     WIDTH_SIZE = 15
     HEIGHT_SIZE = 7
 
-    df = pd.read_csv(csv)
-    df['x'] = df['x']+df['w']/2
-    df['y'] = df['y']+df['h']/2
+    current_dir = os.getcwd()
+    os.chdir(os.path.join(current_dir,'processed', "match data"))
+    df = pd.read_csv(CSV)
+    df_filter = pd.DataFrame()
+    os.chdir(current_dir)
 
-    x = df['x']
-    y = df['y']
-    df['gradient'] = np.gradient(y, x)
-    df['smoothness'] = np.gradient(df['gradient'], x)
-    df['gradient_even'] = np.gradient(y)
-    df['smoothness_even'] = np.gradient(df['gradient'])
+    df_filter['x'] = df['x']+df['w']/2
+    df_filter['y'] = df['y']+df['h']/2
+
+    x = df_filter['x']
+    y = df_filter['y']
+    df_filter['gradient'] = np.gradient(y, x)
+    df_filter['smoothness'] = np.gradient(df_filter['gradient'], x)
+    df_filter['gradient_even'] = np.gradient(y)
+    df_filter['smoothness_even'] = np.gradient(df_filter['gradient'])
 
     fig, ((ax1, ax2, ax3, ax4),(ax5, ax6, ax7, ax8), (ax9, ax10, ax11, ax12)) = plt.subplots(3, 4)
     fig.set_figwidth(WIDTH_SIZE)
@@ -32,16 +37,16 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     ax1.plot(x,y,'.-b')
     ax1.set_title("Original", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    ax2.plot(x,df['gradient'],'.-r', label='gradient')
-    ax2.plot(x,df['gradient_even'],'.-g', label='gradient even')
-    ax3.plot(x,df['smoothness'],'.-r', label='smoothness')
-    ax3.plot(x,df['smoothness_even'],'.-g', label='smoothness even')
+    ax2.plot(x,df_filter['gradient'],'.-r', label='gradient')
+    ax2.plot(x,df_filter['gradient_even'],'.-g', label='gradient even')
+    ax3.plot(x,df_filter['smoothness'],'.-r', label='smoothness')
+    ax3.plot(x,df_filter['smoothness_even'],'.-g', label='smoothness even')
     ax2.legend(fontsize=10)
     ax3.legend(fontsize=10)
     ax2.set_title("Gradient Raw", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax3.set_title("Smoothness Raw", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    df_grad = df.copy()
+    df_grad = df_filter.copy()
     df_grad.drop(df_grad[df_grad['gradient'] > GRAD_THRESHOLD].index, inplace=True)
     df_grad.drop(df_grad[df_grad['gradient'] < -GRAD_THRESHOLD].index, inplace=True)
     df_grad = df_grad[df_grad['gradient'].notna()]
@@ -49,7 +54,7 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     y_grad = df_grad['y']
     gradient = df_grad['gradient']
 
-    df_smooth = df.copy()
+    df_smooth = df_filter.copy()
     df_smooth.drop(df_smooth[df_smooth['smoothness'] > SMOOTH_THRESHOLD].index, inplace=True)
     df_smooth.drop(df_smooth[df_smooth['smoothness'] < -SMOOTH_THRESHOLD].index, inplace=True)
     df_smooth = df_smooth[df_smooth['smoothness'].notna()]
@@ -57,7 +62,7 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     y_smooth = df_smooth['y']
     smoothness = df_smooth['smoothness']
 
-    df_grad_even = df.copy()
+    df_grad_even = df_filter.copy()
     df_grad_even.drop(df_grad_even[df_grad_even['gradient_even'] > GRAD_EVEN_THRESHOLD].index, inplace=True)
     df_grad_even.drop(df_grad_even[df_grad_even['gradient_even'] < -GRAD_EVEN_THRESHOLD].index, inplace=True)
     df_grad_even = df_grad_even[df_grad_even['gradient_even'].notna()]
@@ -65,7 +70,7 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     y_grad_even = df_grad_even['y']
     gradient_even = df_grad_even['gradient_even']
 
-    df_smooth_even = df.copy()
+    df_smooth_even = df_filter.copy()
     df_smooth_even.drop(df_smooth_even[df_smooth_even['smoothness_even'] > SMOOTH_EVEN_THRESHOLD].index, inplace=True)
     df_smooth_even.drop(df_smooth_even[df_smooth_even['smoothness_even'] < -SMOOTH_EVEN_THRESHOLD].index, inplace=True)
     df_smooth_even = df_smooth_even[df_smooth_even['smoothness_even'].notna()]
@@ -94,17 +99,20 @@ def continuity_filter(csv, gradthreshold: float = 5, gradeventhreshold: float = 
     ax12.set_title(f"Filtered Even Smoothness: Threshold {SMOOTH_EVEN_THRESHOLD}", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
     fig.tight_layout()
-    plt.savefig(f"{csv[0:len(csv)-4]}_filtered.png")
-    # plt.show()
-    return (x_grad,y_grad)
-        
+
+    # saves to coordinates saves marked image in appropriate folders
+    os.chdir(os.path.join(current_dir,'processed', "filter visualization"))
+    plt.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    os.chdir(current_dir)
+
+    os.chdir(os.path.join(current_dir,'processed', "filter data"))
+    df_filter.to_csv(f"{CSV[:len(CSV)-4]}.csv")
+    df_grad.to_csv(f"{CSV[:len(CSV)-4]}_grad.csv")
+    df_grad_even.to_csv(f"{CSV[:len(CSV)-4]}_gradeven.csv")
+    df_smooth.to_csv(f"{CSV[:len(CSV)-4]}_smooth.csv")
+    df_smooth_even.to_csv(f"{CSV[:len(CSV)-4]}_smootheven.csv")
+    os.chdir(current_dir)        
 
 
 def graph_filter():
     pass
-
-
-if __name__ == "__main__":
-    data = [file for file in os.listdir(os.getcwd()) if file[len(file)-4:] == ".csv"]
-    for csv in data:
-        continuity_filter(csv)

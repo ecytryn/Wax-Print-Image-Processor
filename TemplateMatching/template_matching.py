@@ -8,7 +8,7 @@ import time
 # params (tweek these!)
 METHODS = [cv2.TM_CCOEFF_NORMED] 
 
-def template_matching(IMG_NAME, TEMPLATES, THRESHOLD, IOU_THRESHOLD, plot):
+def template_matching(IMG_NAME, TEMPLATES, THRESHOLD, IOU_THRESHOLD):
     """ This function reads all jpg from the img folder and runs multi-template matching on it.
     The "coordinates" for teeth (top-left pixel of it) is outputted in a CSV file. Copies of the 
     images labelled with the suspected teeth are also generated for reference.
@@ -73,18 +73,13 @@ def template_matching(IMG_NAME, TEMPLATES, THRESHOLD, IOU_THRESHOLD, plot):
     df.sort_values(by=['x'], inplace=True)
 
 
-    if plot:
-        plt.scatter(data['x'], data['y'])
-        plt.show()
-
-
     # saves to coordinates saves marked image in appropriate folders
     current_dir = os.getcwd()
     processed_dir = os.path.join(current_dir,"processed")
     os.chdir(os.path.join(processed_dir,"match data"))
-    df.to_csv(f"{IMG_NAME[:len(IMG_NAME)-4]}_match.csv")
+    df.to_csv(f"{IMG_NAME[:len(IMG_NAME)-4]}.csv")
     os.chdir(os.path.join(processed_dir,"match visualization"))
-    cv2.imwrite(f"{IMG_NAME[:len(IMG_NAME)-4]}_match.jpg", img)
+    cv2.imwrite(f"{IMG_NAME[:len(IMG_NAME)-4]}.jpg", img)
     os.chdir(current_dir)
 
 
