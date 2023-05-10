@@ -35,7 +35,6 @@ def avg_intesity(data, window_width, CSV):
     target = os.path.join(current_dir,"processed", "projection")
     os.chdir(target)
     projection = cv2.imread(f"{CSV[0:len(CSV)-4]}.jpg")
-    projection = cv2.transpose(projection)
     os.chdir(current_dir)
 
     ax2.imshow(projection)

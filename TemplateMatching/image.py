@@ -116,8 +116,8 @@ if __name__ == "__main__":
     print("============================================================")
     for image in images:
         process_img = ImageProcessor(image, FILETYPE)
-        # process_img.match(True, Match.TWO_D)
-        # process_img.filter(True)
-        # process_img.fit_project(True, 10)
+        process_img.match(True, Match.TWO_D)
+        process_img.filter(True)
+        process_img.fit_project(True, 10)
         process_img.match(True, Match.ONE_D)
         print("============================================================")

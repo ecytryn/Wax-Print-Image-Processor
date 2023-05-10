@@ -73,7 +73,8 @@ def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
 
     target = os.path.join(current_dir,"processed", "projection")
     os.chdir(target)
-    cv2.imwrite(f"{CSV[0:len(CSV)-4]}.jpg", np.array(projected_img))
+    projected_img_t = cv2.transpose(np.array(projected_img))
+    cv2.imwrite(f"{CSV[0:len(CSV)-4]}.jpg", projected_img_t)
     os.chdir(current_dir)
 
     analyze_projection.avg_intesity(projected_img, intensity_window_width, CSV)
