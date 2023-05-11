@@ -11,7 +11,9 @@ import warnings
 import template_matching
 import noise_filtering
 import hyperbola_solve
+import GUI
 from dataclass import Match
+
 
 
 class ImageProcessor:
@@ -50,6 +52,8 @@ class ImageProcessor:
         self.make_dir("projection")
         self.make_dir("projection sampling")
         self.make_dir("projection graphed")
+        self.make_dir("manual data")
+        self.make_dir("manual visualization")
         os.chdir(current)
 
     @staticmethod
@@ -103,6 +107,12 @@ class ImageProcessor:
         if displayTime:
             print(f"FIT PROJECT | '{self.file_name}': {time.time()-start_time} s")
         plt.close("all")
+    
+    def manual(self):
+        try:
+            GUI.GUI(self.file_name, self.name)
+        except RuntimeError as err:
+            print(err)
 
 
 # suppresses warnings
@@ -120,9 +130,10 @@ if __name__ == "__main__":
     print("============================================================")
     for image in images:
         process_img = ImageProcessor(image)
-        process_img.match(True, Match.TWO_D)
-        process_img.filter(True)
-        process_img.fit_project(True, 10)
-        process_img.match(True, Match.ONE_D)
+        # process_img.match(True, Match.TWO_D)
+        # process_img.filter(True)
+        # process_img.fit_project(True, 10)
+        # process_img.match(True, Match.ONE_D)
+        process_img.manual()
         print("============================================================")
 

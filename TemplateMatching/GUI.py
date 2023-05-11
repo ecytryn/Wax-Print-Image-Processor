@@ -3,6 +3,8 @@ import os
 import pandas as pd
 import numpy as np
 from dataclass import Tooth
+from pynput.keyboard import Key, Controller
+
 
 # I think it's BGR for some reason, not RGB
 GAP_YELLOW=(0,255,255)
@@ -10,7 +12,7 @@ TOOTH_RED=(0,0,255)
 GREY = (220,220,220)
 REC_THICKNESS = 2
 WIN_NAME = "Show me those baby whites!"
-SQUARE = 50
+SQUARE = 30
 MODE = Tooth.TOOTH
 
 x = []
@@ -27,6 +29,10 @@ def GUI(FILE_NAME, NAME):
 
     IMG_PATH = os.path.join("processed", "projection", FILE_NAME)
     IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{NAME}.csv")
+
+    if not os.path.isfile(IMG_PATH) or not os.path.isfile(IMG_DATA_PATH):
+        raise RuntimeError(f"{FILE_NAME} or {NAME} does not exist. A hyperbola fit was likely not found or did you run fit_project first?")
+
     image = cv2.imread(IMG_PATH)
     df = pd.read_csv(IMG_DATA_PATH)
     df["type"] = [Tooth.TOOTH for _ in range(len(df.index))]
@@ -53,14 +59,19 @@ def GUI(FILE_NAME, NAME):
         cv2.imshow(WIN_NAME, text_img)
         key = cv2.waitKey(0)
         if key == 32:
+            cv2.destroyAllWindows()
+            break
+        if key == 27:
+            cv2.destroyAllWindows()
             break
         if key == 9:
             if MODE == Tooth.GAP:
                 MODE = Tooth.TOOTH
             else:
                 MODE = Tooth.GAP
-
-    cv2.destroyAllWindows()
+        if key == ord("s"):
+            save(FILE_NAME, NAME)
+            break
 
 def draw_tooth(image, x, y, w, h, MODE):
     center_x = int(x + 1/2 * w)
@@ -106,6 +117,20 @@ def left_click(event, clicked_x, clicked_y, flags, params):
             w = np.append(w, SQUARE)
             h = np.append(h, SQUARE)
             type = np.append(type, MODE)
+        keyboard = Controller()
+        keyboard.press("a")
+        keyboard.release("a")
 
-GUI("1.jpg", "1")
+def save(FILE_NAME, NAME):
+    PATH_IMG = os.path.join("processed", "manual visualization", FILE_NAME)
+    PATH_DATA = os.path.join("processed", "manual data", f"{NAME}.csv")
+    cv2.imwrite(PATH_IMG, clone)
+    df = pd.DataFrame()
+    df["x"] = x
+    df["y"] = y
+    df["w"] = w
+    df["h"] = h
+    df["type"] = type
+    df.to_csv(PATH_DATA)
+    cv2.destroyAllWindows()
 
