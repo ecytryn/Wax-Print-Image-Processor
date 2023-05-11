@@ -4,7 +4,7 @@ import os
 import cv2
 from scipy.signal import find_peaks
 
-def avg_intesity(data, window_width, CSV):
+def avg_intesity(data, WINDOW_WIDTH, FILE_NAME):
     """
     
     """
@@ -20,21 +20,21 @@ def avg_intesity(data, window_width, CSV):
     avg_intensity = np.mean(data, axis=1)
     avg_window_intensity = []
     for i in range(len(avg_intensity)):
-        if i - int(window_width/2) < 0:
+        if i - int(WINDOW_WIDTH/2) < 0:
             start = 0
         else: 
-            start = i - int(window_width/2)
-        if i + int(window_width/2) > len(data):
+            start = i - int(WINDOW_WIDTH/2)
+        if i + int(WINDOW_WIDTH/2) > len(data):
             end = len(data)
         else: 
-            end = i + int(window_width/2)
+            end = i + int(WINDOW_WIDTH/2)
         avg_window_intensity.append(np.mean(avg_intensity[start:end], axis=0))
     
     avg_intensity_graph = [255-i[0] for i in avg_window_intensity]
     
     target = os.path.join(current_dir,"processed", "projection")
     os.chdir(target)
-    projection = cv2.imread(f"{CSV[0:len(CSV)-4]}.jpg")
+    projection = cv2.imread(FILE_NAME)
     os.chdir(current_dir)
 
     ax2.imshow(projection)
@@ -46,5 +46,5 @@ def avg_intesity(data, window_width, CSV):
 
     target = os.path.join(current_dir,"processed", "projection graphed")
     os.chdir(target)
-    fig2.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    fig2.savefig(FILE_NAME)
     os.chdir(current_dir)

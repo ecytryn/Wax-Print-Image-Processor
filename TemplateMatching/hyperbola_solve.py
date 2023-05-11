@@ -11,16 +11,17 @@ from scipy.optimize import fsolve
 '''
 This file contains:
 
-
-
-
+1. Solve 
+2. Equidistant Set
+3. Func
+4. Plot Hyperbola Linear
 '''
 
-def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
+def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER, WINDOW_WIDTH: int = 0):
 
     current_dir = os.getcwd()
     os.chdir(os.path.join(current_dir,'processed', "filter data"))
-    df = pd.read_csv(f"{CSV[:len(CSV)-4]}_{filter}.csv")
+    df = pd.read_csv(f"{IMG_NAME}_{FILTER}.csv")
     os.chdir(current_dir)
 
     x = df["x"].to_numpy()
@@ -32,7 +33,7 @@ def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
     (A,B,C,D,E) = solved
     
     error = False
-    ends = np.roots([A, IMAGE_HEIGHT*B+D, -1+C*IMAGE_HEIGHT**2+E*IMAGE_HEIGHT])
+    ends = np.roots([A, IMG_HEIGHT*B+D, -1+C*IMG_HEIGHT**2+E*IMG_HEIGHT])
 
     if B**2-4*A*C < 0:
         fit = plot_hyperbola_linear(min(ends), max(ends), solved)
@@ -43,7 +44,7 @@ def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
         except RuntimeError as err:
             raise RuntimeError(err)
 
-    img_path = os.path.join('img', f"{CSV[:len(CSV)-4]}{IMG_TYPE}")
+    img_path = os.path.join('img', FILE_NAME)
     img = cv2.imread(img_path)
     fig, ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
@@ -51,11 +52,11 @@ def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
     ax.plot(fit[0], fit[1], '.-r', label="fit")
     target = os.path.join(current_dir,"processed", "fit visualization")
     os.chdir(target)
-    fig.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    fig.savefig(FILE_NAME)
     os.chdir(current_dir)
 
     if error:
-        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {CSV[0:len(CSV)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
+        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {FILE_NAME[0:len(FILE_NAME)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
 
     projected_img = []
 
@@ -74,14 +75,14 @@ def solve(CSV, IMG_TYPE, IMAGE_HEIGHT, filter, intensity_window_width: int = 0):
     target = os.path.join(current_dir,"processed", "projection")
     os.chdir(target)
     projected_img_t = cv2.transpose(np.array(projected_img))
-    cv2.imwrite(f"{CSV[0:len(CSV)-4]}.jpg", projected_img_t)
+    cv2.imwrite(FILE_NAME, projected_img_t)
     os.chdir(current_dir)
 
-    analyze_projection.avg_intesity(projected_img, intensity_window_width, CSV)
+    analyze_projection.avg_intesity(projected_img, WINDOW_WIDTH, FILE_NAME)
 
     target = os.path.join(current_dir,"processed", "projection sampling")
     os.chdir(target)
-    fig.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    fig.savefig(FILE_NAME)
     os.chdir(current_dir)
 
 

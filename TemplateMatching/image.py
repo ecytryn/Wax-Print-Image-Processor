@@ -16,15 +16,13 @@ from dataclass import Match
 
 class ImageProcessor:
     
-    def __init__(self, img_name: str, file_type: str = None, plot_style: str = None):
+    def __init__(self, img_name: str, plot_style: str = None):
         
-        if file_type: 
-            self.file_type = file_type
-        else: 
-            self.file_type = '.jpg'
-        self.name = img_name[:len(img_name)-4]
+        self.file_type = suffix(img_name)
+        self.file_name = img_name
+        self.name = img_name.replace(self.file_type, "")
 
-        assert os.path.isfile(os.path.join(os.getcwd(),'img', img_name)), f"'{img_name}' does not exist"
+        assert os.path.isfile(os.path.join(os.getcwd(),'img', self.file_name)), f"'{self.file_name}' does not exist"
         
         self.image = cv2.imread(os.path.join('img', img_name), cv2.IMREAD_GRAYSCALE)
         self.width = self.image.shape[1]
@@ -55,25 +53,25 @@ class ImageProcessor:
         os.chdir(current)
 
     @staticmethod
-    def make_dir(name: str):
-        if not os.path.isdir(name):
-            os.mkdir(name)
+    def make_dir(dir: str):
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
 
     def match(self, displayTime: bool = False, mode = Match.TWO_D):
         start_time = time.time()
         if mode == Match.TWO_D:
             templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template")) if file[len(file)-4:] == self.file_type]
-            template_matching.template_matching(f"{self.name}{self.file_type}", mode, templates, 0.75, 0.05)
+            template_matching.template_matching(self.file_name, mode, templates, 0.75, 0.05)
         if mode == Match.ONE_D:
             templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template 1D")) if file[len(file)-4:] == self.file_type]
             try:
-                template_matching.template_matching(f"{self.name}{self.file_type}", mode, templates, 0.75, 0.05)
+                template_matching.template_matching(self.file_name, mode, templates, 0.75, 0.05)
             except RuntimeError as err:
                 print(err)
         if displayTime and mode == Match.TWO_D:
-            print(f"MATCH       | '{self.name}{self.file_type}': {time.time()-start_time} s")
+            print(f"MATCH       | '{self.file_name}: {time.time()-start_time} s")
         if displayTime and mode == Match.ONE_D:
-            print(f"MATCH 1D    | '{self.name}{self.file_type}': {time.time()-start_time} s")
+            print(f"MATCH 1D    | '{self.file_name}': {time.time()-start_time} s")
         plt.close("all")
     
 
@@ -83,41 +81,48 @@ class ImageProcessor:
         start_time = time.time()
         path = os.path.join('processed', "match data",f"{self.name}.csv")
         assert os.path.isfile(path), f"'{self.name}.csv' does not exist - did you run match first?"
-        noise_filtering.continuity_filter(f"{self.name}.csv", gradthreshold, gradeventhreshold, 
+        noise_filtering.continuity_filter(self.file_name, self.name, gradthreshold, gradeventhreshold, 
                                           smooththreshold, smootheventhreshold)
         if displayTime:
-            print(f"FILTER      | '{self.name}{self.file_type}': {time.time()-start_time} s")
+            print(f"FILTER      | '{self.file_name}': {time.time()-start_time} s")
         plt.close("all")
 
 
-    def fit_project(self, displayTime: bool = False, intensity_window_width: int = 0):
+    def fit_project(self, displayTime: bool = False, window_width: int = 0):
         start_time = time.time()
         path = os.path.join('processed', "filter data",f"{self.name}.csv")
-        img_path = os.path.join('img', f"{self.name}{self.file_type}")
+        img_path = os.path.join('img', self.file_name)
         assert os.path.isfile(path), f"'{self.name}.csv' does not exist - did you run filter first?"
-        assert os.path.isfile(img_path), f"'{self.name}{self.file_type}' does not exist - did you run filter first?"
+        assert os.path.isfile(img_path), f"'{self.file_name}' does not exist - did you run filter first?"
 
         try:
-            hyperbola_solve.solve(f"{self.name}.csv", self.file_type, self.height, "grad", intensity_window_width)
+            hyperbola_solve.solve(self.file_name, self.name, self.height, "grad", window_width)
         except RuntimeError as err:
             print(err)
 
         if displayTime:
-            print(f"FIT PROJECT | '{self.name}{self.file_type}': {time.time()-start_time} s")
+            print(f"FIT PROJECT | '{self.file_name}': {time.time()-start_time} s")
         plt.close("all")
 
 
 # suppresses warnings
 warnings.filterwarnings('ignore')
 
+
+def suffix(file: str):
+    suffix_index = file.index(".")
+    return file[suffix_index:]
+
+
 if __name__ == "__main__":
-    FILETYPE = ".jpg"
-    images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if file[len(file)-len(FILETYPE):] == FILETYPE]
+    FILETYPE = [".jpg", ".jpeg", ".png"]
+    images = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) if suffix(file) in FILETYPE]
     print("============================================================")
     for image in images:
-        process_img = ImageProcessor(image, FILETYPE)
+        process_img = ImageProcessor(image)
         process_img.match(True, Match.TWO_D)
         process_img.filter(True)
         process_img.fit_project(True, 10)
         process_img.match(True, Match.ONE_D)
         print("============================================================")
+

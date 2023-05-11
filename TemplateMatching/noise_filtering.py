@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def continuity_filter(CSV, gradthreshold: float = 5, gradeventhreshold: float = 50,
+def continuity_filter(FILE_NAME, NAME, gradthreshold: float = 5, gradeventhreshold: float = 50,
                smooththreshold: float = 0.5, smootheventhreshold: float = 5,):
     GRAD_THRESHOLD = gradthreshold
     GRAD_EVEN_THRESHOLD = gradeventhreshold
@@ -16,7 +16,7 @@ def continuity_filter(CSV, gradthreshold: float = 5, gradeventhreshold: float = 
 
     current_dir = os.getcwd()
     os.chdir(os.path.join(current_dir,'processed', "match data"))
-    df = pd.read_csv(CSV)
+    df = pd.read_csv(f"{NAME}.csv")
     df_filter = pd.DataFrame()
     os.chdir(current_dir)
 
@@ -102,15 +102,15 @@ def continuity_filter(CSV, gradthreshold: float = 5, gradeventhreshold: float = 
 
     # saves to coordinates saves marked image in appropriate folders
     os.chdir(os.path.join(current_dir,'processed', "filter visualization"))
-    plt.savefig(f"{CSV[0:len(CSV)-4]}.jpg")
+    plt.savefig(FILE_NAME)
     os.chdir(current_dir)
 
     os.chdir(os.path.join(current_dir,'processed', "filter data"))
-    df_filter.to_csv(f"{CSV[:len(CSV)-4]}.csv")
-    df_grad.to_csv(f"{CSV[:len(CSV)-4]}_grad.csv")
-    df_grad_even.to_csv(f"{CSV[:len(CSV)-4]}_gradeven.csv")
-    df_smooth.to_csv(f"{CSV[:len(CSV)-4]}_smooth.csv")
-    df_smooth_even.to_csv(f"{CSV[:len(CSV)-4]}_smootheven.csv")
+    df_filter.to_csv(f"{NAME}.csv")
+    df_grad.to_csv(f"{NAME}_grad.csv")
+    df_grad_even.to_csv(f"{NAME}_gradeven.csv")
+    df_smooth.to_csv(f"{NAME}_smooth.csv")
+    df_smooth_even.to_csv(f"{NAME}_smootheven.csv")
     os.chdir(current_dir)        
 
 
