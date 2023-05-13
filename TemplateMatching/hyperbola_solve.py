@@ -8,6 +8,8 @@ import project_1D
 import analyze_projection
 from scipy.optimize import fsolve
 
+from utils import CONFIG, Filter
+
 '''
 This file contains:
 1. Solve 
@@ -16,14 +18,20 @@ This file contains:
 4. Plot Hyperbola Linear
 '''
 
-def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER = None, WINDOW_WIDTH: int = 0):
+def solve(file_name, img_name, img_height):
 
     current_dir = os.getcwd()
     os.chdir(os.path.join(current_dir,'processed', "filter data"))
-    if FILTER:
-        df = pd.read_csv(f"{IMG_NAME}_{FILTER}.csv")
+    if CONFIG.FILTER == Filter.GRADIENT:
+        df = pd.read_csv(f"{img_name}_grad.csv")
+    elif CONFIG.FILTER == Filter.GRADIENT_EVEN:
+        df = pd.read_csv(f"{img_name}_gradeven.csv")
+    elif CONFIG.FILTER == Filter.SMOOTH:
+        df = pd.read_csv(f"{img_name}_smooth.csv")
+    elif CONFIG.FILTER == Filter.SMOOTH_EVEN:
+        df = pd.read_csv(f"{img_name}_smootheven.csv")
     else:
-        df = pd.read_csv(f"{IMG_NAME}.csv")
+        df = pd.read_csv(f"{img_name}.csv")
     os.chdir(current_dir)
 
     x = df["x"].to_numpy()
@@ -35,7 +43,7 @@ def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER = None, WINDOW_WIDTH: int = 0)
     (A,B,C,D,E) = solved
     
     error = False
-    ends = np.roots([A, IMG_HEIGHT*B+D, -1+C*IMG_HEIGHT**2+E*IMG_HEIGHT])
+    ends = np.roots([A, img_height*B+D, -1+C*img_height**2+E*img_height])
 
     if B**2-4*A*C < 0:
         fit = plot_hyperbola_linear(min(ends), max(ends), solved)
@@ -46,7 +54,7 @@ def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER = None, WINDOW_WIDTH: int = 0)
         except RuntimeError as err:
             raise RuntimeError(err)
 
-    img_path = os.path.join('img', FILE_NAME)
+    img_path = os.path.join('img', file_name)
     img = cv2.imread(img_path)
     fig, ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
@@ -54,11 +62,11 @@ def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER = None, WINDOW_WIDTH: int = 0)
     ax.plot(fit[0], fit[1], '.-r', label="fit")
     target = os.path.join(current_dir,"processed", "fit visualization")
     os.chdir(target)
-    fig.savefig(FILE_NAME)
+    fig.savefig(file_name)
     os.chdir(current_dir)
 
     if error:
-        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {FILE_NAME[0:len(FILE_NAME)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
+        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {file_name[0:len(file_name)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
 
     projected_img = []
     normals_x = []
@@ -87,21 +95,21 @@ def solve(FILE_NAME, IMG_NAME, IMG_HEIGHT, FILTER = None, WINDOW_WIDTH: int = 0)
     df_project_data["normal_x"] = normals_x
     df_project_data["normal_y"] = normals_y
 
-    target = os.path.join(current_dir,"processed", "projection data", f"{IMG_NAME}.csv")
+    target = os.path.join(current_dir,"processed", "projection data", f"{img_name}.csv")
     df_project_data.to_csv(target)
 
     target = os.path.join(current_dir,"processed", "projection")
     os.chdir(target)
     projected_img_t = cv2.transpose(np.array(projected_img))
-    cv2.imwrite(FILE_NAME, projected_img_t)
+    cv2.imwrite(file_name, projected_img_t)
     os.chdir(current_dir)
 
     # intensity analysis; uncomment to perform
-    # analyze_projection.avg_intensity(projected_img, WINDOW_WIDTH, FILE_NAME)
+    # analyze_projection.avg_intensity(file_name, projected_img)
 
     target = os.path.join(current_dir,"processed", "projection sampling")
     os.chdir(target)
-    fig.savefig(FILE_NAME)
+    fig.savefig(file_name)
     os.chdir(current_dir)
 
 
@@ -113,10 +121,9 @@ def equidistant_set(start, end, coeff):
     linear = coeff[1]*x+coeff[4]
     constant = coeff[0]*x**2+coeff[3]*x-1
 
-    #Ax**2+Bxy+Cy**2+Dx+Ey-1=0
-    #circle: x = prev_x + cos(t); y = prev_y + sin(t)
-    #intersect: Ax**2+Bxy+Cy**2+Dx+Ey-1=0
-    (A,B,C,D,E) = coeff
+    #conic: Ax**2+Bxy+Cy**2+Dx+Ey-1=0
+    #circle parameterization: x = prev_x + cos(t); y = prev_y + sin(t)
+    #intersection: plug
 
     start_roots = [r for r in np.roots([quadratic[0], linear[0], constant[0]]) if r >= 0]
     start_y = min(start_roots)

@@ -3,16 +3,15 @@ import os
 import pandas as pd
 import numpy as np
 from pynput.keyboard import Key, Controller
-from utils import Tooth, Match, PARAMS
+from utils import Tooth, Match, CONFIG
 
 
-# I think it's BGR for some reason, not RGB
 GREY = (100,100,100)
 REC_THICKNESS = 2
 SQUARE = 30
 STORE_MODE = Tooth.TOOTH
 MODE = Tooth.TOOTH
-MODES = [mode for mode in Match]
+MODES = [mode for mode in Tooth if mode != Tooth.NO_BOX]
 
 
 x = np.array([])
@@ -23,18 +22,18 @@ type = np.array([])
 clone = 0
 
 
-def GUI(FILE_NAME, NAME, mode):
+def GUI(file_name, img_name, mode):
     global x, y, w, h, type, clone, MODE, STORE_MODE
 
     MODE = Tooth.TOOTH
     STORE_MODE = Tooth.TOOTH
 
     if mode == Match.ONE_D:
-        IMG_PATH = os.path.join("processed", "projection", FILE_NAME)
-        IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{NAME}.csv")
+        IMG_PATH = os.path.join("processed", "projection", file_name)
+        IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{img_name}.csv")
     else:
-        IMG_PATH = os.path.join("img", FILE_NAME)
-        IMG_DATA_PATH = os.path.join("processed", "match data", f"{NAME}.csv") 
+        IMG_PATH = os.path.join("img", file_name)
+        IMG_DATA_PATH = os.path.join("processed", "match data", f"{img_name}.csv") 
 
     if not os.path.isfile(IMG_PATH):
         raise RuntimeError(f"{IMG_PATH} does not exist in . A hyperbola fit was likely not found or did you run fit_project first?")
@@ -50,8 +49,8 @@ def GUI(FILE_NAME, NAME, mode):
         type = df["type"].to_numpy()
 
     image = cv2.imread(IMG_PATH)
-    cv2.namedWindow(NAME)
-    cv2.setMouseCallback(NAME, left_click)
+    cv2.namedWindow(img_name)
+    cv2.setMouseCallback(img_name, left_click)
     mode_index = 0
 
     while 1:
@@ -61,17 +60,17 @@ def GUI(FILE_NAME, NAME, mode):
 
         # border_img = cv2.copyMakeBorder(clone, 1000, 1000, 0, 0, cv2.BORDER_CONSTANT, value=GREY)
         if MODE == Tooth.TOOTH:
-            text_img = cv2.putText(clone, "mode: tooth", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, PARAMS.TOOTH, 2)
+            text_img = cv2.putText(clone, "mode: tooth", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, CONFIG.TOOTH, 2)
         elif MODE == Tooth.GAP: 
-            text_img = cv2.putText(clone, "mode: gap", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, PARAMS.GAP, 2)
+            text_img = cv2.putText(clone, "mode: gap", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, CONFIG.GAP, 2)
         elif MODE == Tooth.CENTER_T: 
-            text_img = cv2.putText(clone, "mode: center tooth", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, PARAMS.CENTER, 2)
+            text_img = cv2.putText(clone, "mode: center tooth", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, CONFIG.CENTER, 2)
         elif MODE == Tooth.CENTER_G:
-            text_img = cv2.putText(clone, "mode: center gap", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, PARAMS.CENTER, 2)
+            text_img = cv2.putText(clone, "mode: center gap", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, CONFIG.CENTER, 2)
         else:
             text_img = cv2.putText(clone, "mode: viewing", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, GREY, 2)
 
-        cv2.imshow(NAME, text_img)
+        cv2.imshow(img_name, text_img)
         key = cv2.waitKey(0)
         if key == 32:
             if MODE == Tooth.NO_BOX:
@@ -86,7 +85,7 @@ def GUI(FILE_NAME, NAME, mode):
             mode_index = (mode_index + 1) % len(MODES)
             MODE = MODES[mode_index]
         elif key == ord("s"):
-            save(FILE_NAME, NAME, mode)
+            save(file_name, img_name, mode)
             break
         elif key == ord("1"):
             MODE = Tooth.TOOTH
@@ -113,13 +112,13 @@ def draw_tooth(image, x, y, w, h, mode):
     label = "0"
 
     if mode == Tooth.TOOTH:
-        color = PARAMS.TOOTH
+        color = CONFIG.TOOTH
     elif mode == Tooth.GAP:
-        color = PARAMS.TOOTH
+        color = CONFIG.GAP
     elif mode == Tooth.CENTER_T :
-        color = PARAMS.CENTER
+        color = CONFIG.CENTER
     elif mode == Tooth.CENTER_G:
-        color = PARAMS.CENTER
+        color = CONFIG.CENTER
 
     
     if mode == Tooth.CENTER_G:
@@ -193,13 +192,13 @@ def left_click(event, clicked_x, clicked_y, flags, params):
         keyboard.press("a")
         keyboard.release("a")
 
-def save(FILE_NAME, NAME, mode):
+def save(file_name, img_name, mode):
     if mode == Match.ONE_D:  
-        PATH_IMG = os.path.join("processed", "manual visualization 1D", FILE_NAME)
-        PATH_DATA = os.path.join("processed", "manual data 1D", f"{NAME}.csv")
+        PATH_IMG = os.path.join("processed", "manual visualization 1D", file_name)
+        PATH_DATA = os.path.join("processed", "manual data 1D", f"{img_name}.csv")
     else:
-        PATH_IMG = os.path.join("processed", "manual visualization", FILE_NAME)
-        PATH_DATA = os.path.join("processed", "manual data", f"{NAME}.csv")
+        PATH_IMG = os.path.join("processed", "manual visualization", file_name)
+        PATH_DATA = os.path.join("processed", "manual data", f"{img_name}.csv")
     cv2.imwrite(PATH_IMG, clone)
     df = pd.DataFrame()
     df["x"] = x

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 
+# enum classes
 class Match(Enum):
     TWO_D = 1
     ONE_D = 2
@@ -16,13 +17,47 @@ class Tooth(Enum):
     CENTER_G = 4
     NO_BOX = 5
 
+class Filter(Enum):
+    GRADIENT = 1
+    GRADIENT_EVEN = 2
+    SMOOTH = 3
+    SMOOTH_EVEN = 4
+    NONE = 5
 
+
+# settings/configurations of the program
 @dataclass(frozen=True)
-class PARAMS:
+class CONFIG:
+    "TEMPLATE MATCHING"
+    #minimum score to be considered a tooth
+    THRESHOLD = 0.75
+    THRESHOLD_1D = 0.75
+    #permited overlap to identify two "teeth" as distinct
+    IOU_THRESHOLD = 0.05
+    IOU_THRESHOLD_1D = 0.05   
+    #methods to use for template matching; https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html for a list of methods
+    METHODS = [cv2.TM_CCOEFF_NORMED] 
+
     "NOISE FILTERING"
+    #threshold for gradient filtering
+    GRAD_THRESHOLD = 5
+    #threshold for gradient filtering (assuming teeth are equally spaced)
+    GRAD_EVEN_THRESHOLD = 50
+    #threshold for smoothness filtering
+    SMOOTH_THRESHOLD = 0.5
+    #threshold for smoothness filtering (assuming teeth are equally spaced)
+    SMOOTH_EVEN_THRESHOLD = 5
+
+    "HYPERBOLA SOLVE"
+    #for intensity analysis; each data point is the average over a window WINDOW_WIDTH wide
+    WINDOW_WIDTH = 10
+    #which filtering technique to choose. See class Filter for options. 
+    FILTER = Filter.NONE
     
 
     "OTHERS"
+    # accepted filetypes to run analysis
+    FILE_TYPES = [".jpg", ".png", ".jpeg"]
     #colors for manual editing; in format (G,B,R) not (R,G,B)!
     CENTER = (255,255,0) #cyan
     GAP=(0,255,255) #yellow
