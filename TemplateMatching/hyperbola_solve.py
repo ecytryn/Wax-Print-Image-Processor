@@ -7,6 +7,7 @@ import cv2
 import project_1D
 import analyze_projection
 from scipy.optimize import fsolve
+from cross_prod_center import cross_prod_center
 
 from utils import CONFIG, Filter
 
@@ -42,7 +43,7 @@ def solve(file_name, img_name, img_height):
     solved = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
 
     (A,B,C,D,E) = solved
-    
+
     error = False
     ends = np.roots([A, img_height*B+D, -1+C*img_height**2+E*img_height])
 
@@ -59,8 +60,9 @@ def solve(file_name, img_name, img_height):
     img = cv2.imread(img_path)
     fig, ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
-    
     ax.plot(fit[0], fit[1], '.-r', label="fit")
+    cross_prod_center(solved, df)
+
     target = os.path.join(current_dir,"processed", "fit visualization")
     os.chdir(target)
     fig.savefig(file_name)
@@ -150,8 +152,8 @@ def equidistant_set(start, end, coeff):
         else:
             curr_1x, curr_1y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
             curr_2x, curr_2y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
-            assert r1[0] < np.pi/2 and r1[0] > -np.pi/2, f"Equidistant Points Error: r1x_0 = {prev_x}, r1y_0 = {prev_y}, r1x_1={curr_1x}, r1x_2={curr_1y}\nr2x_0 = {prev_x}, r2y_0 = {prev_y}, r2x_1={curr_2x}, r2x_2={curr_2y}\n(A,B,C,D,E) = {coeff}"
-
+            if r1[0] < np.pi/2 and r1[0] > -np.pi/2:
+                raise RuntimeError(f"Equidistant Points Error: r1x_0 = {prev_x}, r1y_0 = {prev_y}, r1x_1={curr_1x}, r1x_2={curr_1y}\nr2x_0 = {prev_x}, r2y_0 = {prev_y}, r2x_1={curr_2x}, r2x_2={curr_2y}\n(A,B,C,D,E) = {coeff}\n Try readjusting some data through GUI")
         result[0].append(curr_x)
         result[1].append(curr_y)
         prev_x = curr_x

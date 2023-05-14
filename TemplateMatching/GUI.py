@@ -30,10 +30,18 @@ def GUI(file_name, img_name, mode):
 
     if mode == Match.ONE_D:
         IMG_PATH = os.path.join("processed", "projection", file_name)
-        IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{img_name}.csv")
+        MANUAL_DATA_PATH = os.path.join("processed", "manual data 1D", f"{img_name}.csv")
+        if os.path.isfile(MANUAL_DATA_PATH):
+            IMG_DATA_PATH = MANUAL_DATA_PATH
+        else:
+            IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{img_name}.csv")
     else:
         IMG_PATH = os.path.join("img", file_name)
-        IMG_DATA_PATH = os.path.join("processed", "match data", f"{img_name}.csv") 
+        MANUAL_DATA_PATH = os.path.join("processed", "manual data", f"{img_name}.csv")
+        if os.path.isfile(MANUAL_DATA_PATH):
+            IMG_DATA_PATH = MANUAL_DATA_PATH
+        else:
+            IMG_DATA_PATH = os.path.join("processed", "match data", f"{img_name}.csv") 
 
     if not os.path.isfile(IMG_PATH):
         raise RuntimeError(f"{IMG_PATH} does not exist. A hyperbola fit was likely not found or did you run fit_project first?")
@@ -41,13 +49,23 @@ def GUI(file_name, img_name, mode):
         print(f"{IMG_DATA_PATH} not found, empty data set used")
     else:
         df = pd.read_csv(IMG_DATA_PATH)
-        df["type"] = [Tooth.TOOTH for _ in range(len(df.index))]
         x = df["x"].to_numpy()
         y = df["y"].to_numpy()
         w = df["w"].to_numpy()
         h = df["h"].to_numpy()
-        type = df["type"].to_numpy()
-
+        if "type" not in df.columns:
+            df["type"] = [Tooth.TOOTH for _ in range(len(df.index))]
+            type = df["type"]
+        else: 
+            for i in df["type"]:
+                if i == "Tooth.TOOTH":
+                    type = np.append(type, Tooth.TOOTH)
+                elif i == "Tooth.GAP":
+                    type = np.append(type, Tooth.GAP)
+                elif i == "Tooth.CENTER_T":
+                    type = np.append(type, Tooth.CENTER_T)
+                elif i == "Tooth.CENTER_G":
+                    type = np.append(type, Tooth.CENTER_G)
     image = cv2.imread(IMG_PATH)
     cv2.namedWindow(img_name)
     cv2.setMouseCallback(img_name, left_click)
@@ -109,24 +127,17 @@ def draw_tooth(image, x, y, w, h, mode):
     end_x = x + w
     end_y = y + h
 
-    label = "0"
-
     if mode == Tooth.TOOTH:
         color = CONFIG.TOOTH
     elif mode == Tooth.GAP:
         color = CONFIG.GAP
-    elif mode == Tooth.CENTER_T :
+    elif mode == Tooth.CENTER_T:
         color = CONFIG.CENTER
+        image_labelled = draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "T")
     elif mode == Tooth.CENTER_G:
         color = CONFIG.CENTER
-
-    
-    if mode == Tooth.CENTER_G:
         image_labelled = draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "G")
-    elif mode == Tooth.CENTER_T:
-        image_labelled = draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "T")
-    else: 
-        image_labelled = draw_center(image, center_x, center_y, color)
+    image_labelled = draw_center(image, center_x, center_y, color)
 
     if MODE == Tooth.NO_BOX:
         return image_labelled
