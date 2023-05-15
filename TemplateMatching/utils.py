@@ -9,11 +9,13 @@ from typing import Tuple
 # enum classes
 @unique
 class Match(Enum):
+    # types of matches 
     TWO_D = 1
     ONE_D = 2
 
 @unique
 class Tooth(Enum):
+    # types of data
     TOOTH = 1
     GAP = 2
     CENTER_T = 3
@@ -22,6 +24,7 @@ class Tooth(Enum):
 
 @unique
 class Filter(Enum):
+    # types of filter
     GRADIENT = 1
     GRADIENT_EVEN = 2
     SMOOTH = 3
@@ -31,6 +34,7 @@ class Filter(Enum):
 
 @unique
 class Cross(Enum):
+    # types of method for cross product step
     SQAURED = 1
     ABS = 2
 
@@ -66,42 +70,47 @@ class CONFIG:
     TRANSPOSE_MANUAL = True
     
     "CROSS PROD"
+    # which cross product method to use
     CROSS_METHOD: Cross = Cross.SQAURED
+    # how many pairs of teeth around the current tooth to cross
     CROSS: int = 3
 
     "PROJECT 1D"
+    # how far away to sample from hyperbola for projection
     SAMPLING_WIDTH: int = 100
 
     "GUI"
+    # side length of default manual squares
     SQUARE = 30
 
     "PLOT_MANUAL"
+    # how much "time" elapsed between each image
     TIME = 3
+    # PATH to plot results from; this folder will be seen to contain the result data
     PATH = os.path.join(os.getcwd(),"processed", "manual data 1D")
 
-    "OTHERS"
-    # accepted filetypes to run analysis
-    FILE_TYPES = [".jpg", ".png", ".jpeg"]
+    "OTHERS - STYLISTIC"
     #colors for manual editing; in format (G,B,R) not (R,G,B)!
     CENTER: Tuple[int, int, int] = (255,255,0) #cyan
     GAP: Tuple[int, int, int] = (0,255,255) #yellow
     TOOTH: Tuple[int, int, int] = (0,0,255) #red
-
     # plot style used by matplotlib
     PLOT_STYLE: str = "bmh"
-
     #matplotlib figure dimensions (used when output is too crammed)
     WIDTH_SIZE: int = 15
     HEIGHT_SIZE: int = 7
 
+    "OTHERS - INITIALIZATION"
     # directories that will be created in /processed
     DIRS_TO_MAKE = ['match visualization', 'match data', 'match visualization 1D', 'match data 1D',
                 'filter visualization', 'filter data', 'fit visualization',
                 'projection', 'projection sampling', 'projection graphed', 'projection data',
                 'manual data', 'manual visualization', 'manual data 1D', 'manual visualization 1D']
+    # accepted filetypes for templates and images
+    FILE_TYPES = [".jpg", ".png", ".jpeg"]
 
 
-# helper functions
+# general helper functions
 def make_dir(dir: str):
     '''create a specified directory if it doesn't already exist'''
     if not os.path.isdir(dir):

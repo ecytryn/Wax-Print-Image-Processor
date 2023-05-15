@@ -1,23 +1,26 @@
+# library imports
 import os 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import cv2
-import project_1D
-import analyze_projection
 from scipy.optimize import fsolve
+
+
+#helper functions
 from cross_prod_center import cross_prod_center
 import GUI
-
 from utils import CONFIG, Filter, Match
+import project_1D
+import analyze_projection
 
 '''
 This file contains:
-1. Solve 
-2. Equidistant Set
-3. Func
-4. Plot Hyperbola Linear
+1. Solve - fits a hyperbola to the filtered data and performs projection
+2. Equidistant Set - returns a set of coordinates on the hyperbola equidistant in terms of arclength
+3. Func - helper for Equidistant Set; non-linear system to solve to obtain equidistant data points
+4. Plot Hyperbola Linear - returns a set of coordinates on the hyperbola equidistant in terms of x
 '''
 
 def solve(file_name, img_name, img_height):
