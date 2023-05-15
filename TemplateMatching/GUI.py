@@ -8,7 +8,6 @@ from utils import Tooth, Match, CONFIG
 
 GREY = (100,100,100)
 REC_THICKNESS = 2
-SQUARE = 30
 STORE_MODE = Tooth.TOOTH
 MODE = Tooth.TOOTH
 MODES = [mode for mode in Tooth if mode != Tooth.NO_BOX]
@@ -29,22 +28,22 @@ def GUI(file_name, img_name, mode):
     STORE_MODE = Tooth.TOOTH
 
     if mode == Match.ONE_D:
-        IMG_PATH = os.path.join("processed", "projection", file_name)
+        img_path = os.path.join("processed", "projection", file_name)
         MANUAL_DATA_PATH = os.path.join("processed", "manual data 1D", f"{img_name}.csv")
         if os.path.isfile(MANUAL_DATA_PATH):
             IMG_DATA_PATH = MANUAL_DATA_PATH
         else:
             IMG_DATA_PATH = os.path.join("processed", "match data 1D", f"{img_name}.csv")
     else:
-        IMG_PATH = os.path.join("img", file_name)
+        img_path = os.path.join("img", file_name)
         MANUAL_DATA_PATH = os.path.join("processed", "manual data", f"{img_name}.csv")
         if os.path.isfile(MANUAL_DATA_PATH):
             IMG_DATA_PATH = MANUAL_DATA_PATH
         else:
             IMG_DATA_PATH = os.path.join("processed", "match data", f"{img_name}.csv") 
 
-    if not os.path.isfile(IMG_PATH):
-        raise RuntimeError(f"{IMG_PATH} does not exist. A hyperbola fit was likely not found or did you run fit_project first?")
+    if not os.path.isfile(img_path):
+        raise RuntimeError(f"{img_path} does not exist. A hyperbola fit was likely not found or did you run fit_project first?")
     if not os.path.isfile(IMG_DATA_PATH):
         print(f"{IMG_DATA_PATH} not found, empty data set used")
     else:
@@ -57,6 +56,7 @@ def GUI(file_name, img_name, mode):
             df["type"] = [Tooth.TOOTH for _ in range(len(df.index))]
             type = df["type"]
         else: 
+            type = np.array([])
             for i in df["type"]:
                 if i == "Tooth.TOOTH":
                     type = np.append(type, Tooth.TOOTH)
@@ -66,7 +66,7 @@ def GUI(file_name, img_name, mode):
                     type = np.append(type, Tooth.CENTER_T)
                 elif i == "Tooth.CENTER_G":
                     type = np.append(type, Tooth.CENTER_G)
-    image = cv2.imread(IMG_PATH)
+    image = cv2.imread(img_path)
     cv2.namedWindow(img_name)
     cv2.setMouseCallback(img_name, left_click)
     mode_index = 0
@@ -74,7 +74,7 @@ def GUI(file_name, img_name, mode):
     while 1:
         clone = image.copy()
         for i in range(len(x)):
-            draw_tooth(clone, x[i], y[i], w[i], h[i], type[i])
+            clone = draw_tooth(clone, x[i], y[i], w[i], h[i], type[i])
 
         # border_img = cv2.copyMakeBorder(clone, 1000, 1000, 0, 0, cv2.BORDER_CONSTANT, value=GREY)
         if MODE == Tooth.TOOTH:
@@ -103,7 +103,7 @@ def GUI(file_name, img_name, mode):
             mode_index = (mode_index + 1) % len(MODES)
             MODE = MODES[mode_index]
         elif key == ord("s"):
-            save(file_name, img_name, mode)
+            save(file_name, img_name, mode, clone)
             break
         elif key == ord("1"):
             MODE = Tooth.TOOTH
@@ -191,33 +191,69 @@ def left_click(event, clicked_x, clicked_y, flags, params):
                 type = np.delete(type, index)
 
         if draw:
-            new_x = int(clicked_x - 1/2 * SQUARE)
-            new_y = int(clicked_y - 1/2 * SQUARE)
+            new_x = int(clicked_x - 1/2 * CONFIG.SQUARE)
+            new_y = int(clicked_y - 1/2 * CONFIG.SQUARE)
             x = np.append(x, new_x)
             y = np.append(y, new_y)
-            w = np.append(w, SQUARE)
-            h = np.append(h, SQUARE)
+            w = np.append(w, CONFIG.SQUARE)
+            h = np.append(h, CONFIG.SQUARE)
             type = np.append(type, MODE)
 
         keyboard = Controller()
         keyboard.press("a")
         keyboard.release("a")
 
-def save(file_name, img_name, mode):
+def save(file_name, img_name, mode, image, res_df = None):
     if mode == Match.ONE_D:  
         PATH_IMG = os.path.join("processed", "manual visualization 1D", file_name)
         PATH_DATA = os.path.join("processed", "manual data 1D", f"{img_name}.csv")
     else:
         PATH_IMG = os.path.join("processed", "manual visualization", file_name)
         PATH_DATA = os.path.join("processed", "manual data", f"{img_name}.csv")
-    cv2.imwrite(PATH_IMG, clone)
-    df = pd.DataFrame()
-    df["x"] = x
-    df["y"] = y
-    df["w"] = w
-    df["h"] = h
-    df["type"] = type
-    df.sort_values(by=["x"], inplace=True)
-    df.to_csv(PATH_DATA)
+    cv2.imwrite(PATH_IMG, image)
+
+    if isinstance(res_df, pd.DataFrame):
+        res_df.to_csv(PATH_DATA)
+    else:
+        df = pd.DataFrame()
+        df["x"] = x
+        df["y"] = y
+        df["w"] = w
+        df["h"] = h
+        df["type"] = type
+        df.sort_values(by=["x"], inplace=True)
+        df.to_csv(PATH_DATA)
     cv2.destroyAllWindows()
 
+
+
+def plot_teeth(file_name, img_name, mode, df):
+
+    if mode == Match.ONE_D:
+        img_path = os.path.join("processed", "projection", file_name)
+    else:
+        img_path = os.path.join("img", file_name)
+
+    x = df["x"].to_numpy()
+    y = df["y"].to_numpy()
+    w = df["w"].to_numpy()
+    h = df["h"].to_numpy()
+    type = np.array([])
+    for i in df["type"]:
+        if i == "Tooth.TOOTH":
+            type = np.append(type, Tooth.TOOTH)
+        elif i == "Tooth.GAP":
+            type = np.append(type, Tooth.GAP)
+        elif i == "Tooth.CENTER_T":
+            type = np.append(type, Tooth.CENTER_T)
+        elif i == "Tooth.CENTER_G":
+            type = np.append(type, Tooth.CENTER_G)
+
+    if not os.path.isfile(img_path):
+        raise RuntimeError(f"{img_path} does not exist. A hyperbola fit was likely not found or did you run fit_project first?")
+
+    image = cv2.imread(img_path)
+    for i in range(len(x)):
+        image = draw_tooth(image, int(x[i]), int(y[i]), w[i], h[i], type[i])
+
+    save(file_name, img_name, mode, image, df)

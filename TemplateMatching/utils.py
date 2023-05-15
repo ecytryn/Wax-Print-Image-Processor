@@ -27,6 +27,7 @@ class Filter(Enum):
     SMOOTH = 3
     SMOOTH_EVEN = 4
     NONE = 5
+    MANUAL = 6
 
 @unique
 class Cross(Enum):
@@ -61,12 +62,22 @@ class CONFIG:
     #for intensity analysis; each data point is the average over a window WINDOW_WIDTH wide
     WINDOW_WIDTH: int = 10
     #which filtering technique to choose. See class Filter for options. 
-    FILTER: Filter = Filter.NONE
+    FILTER: Filter = Filter.MANUAL
     TRANSPOSE_MANUAL = True
     
     "CROSS PROD"
     CROSS_METHOD: Cross = Cross.SQAURED
     CROSS: int = 3
+
+    "PROJECT 1D"
+    SAMPLING_WIDTH: int = 100
+
+    "GUI"
+    SQUARE = 30
+
+    "PLOT_MANUAL"
+    TIME = 3
+    PATH = os.path.join(os.getcwd(),"processed", "manual data 1D")
 
     "OTHERS"
     # accepted filetypes to run analysis

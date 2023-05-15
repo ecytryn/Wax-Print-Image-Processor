@@ -8,8 +8,9 @@ import project_1D
 import analyze_projection
 from scipy.optimize import fsolve
 from cross_prod_center import cross_prod_center
+import GUI
 
-from utils import CONFIG, Filter
+from utils import CONFIG, Filter, Match
 
 '''
 This file contains:
@@ -40,19 +41,19 @@ def solve(file_name, img_name, img_height):
 
     matrix_t = [x**2, x*y, y**2, x, y]
     matrix = np.transpose(matrix_t)
-    solved = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
+    coeff = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
 
-    (A,B,C,D,E) = solved
+    (A,B,C,D,E) = coeff
 
     error = False
     ends = np.roots([A, img_height*B+D, -1+C*img_height**2+E*img_height])
 
     if B**2-4*A*C < 0:
-        fit = plot_hyperbola_linear(min(ends), max(ends), solved)
+        fit = plot_hyperbola_linear(min(ends), max(ends), coeff)
         error = True
     else: 
         try: 
-            fit = equidistant_set(min(ends), max(ends), solved)
+            fit = equidistant_set(min(ends), max(ends), coeff)
         except RuntimeError as err:
             raise RuntimeError(err)
 
@@ -61,7 +62,6 @@ def solve(file_name, img_name, img_height):
     fig, ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
     ax.plot(fit[0], fit[1], '.-r', label="fit")
-    cross_prod_center(solved, df)
 
     target = os.path.join(current_dir,"processed", "fit visualization")
     os.chdir(target)
@@ -78,7 +78,7 @@ def solve(file_name, img_name, img_height):
     tangents_y = []
 
     for i in range(len(fit[0])):
-        projection = project_1D.project_one(fit[0][i], fit[1][i], solved)
+        projection = project_1D.project_one(fit[0][i], fit[1][i], coeff)
         temp = []
         normals_x.append(projection[2][0])
         normals_y.append(projection[2][1])
@@ -92,7 +92,6 @@ def solve(file_name, img_name, img_height):
                 temp.append([255,255,255])
         projected_img.append(temp)
         ax.plot(projection[0], projection[1], '.-y', label="projection")
-
 
     # sets up a data frame to store projection data
     df_project_data = pd.DataFrame()
@@ -120,6 +119,39 @@ def solve(file_name, img_name, img_height):
     os.chdir(target)
     fig.savefig(file_name)
     os.chdir(current_dir)
+
+
+    if CONFIG.FILTER == Filter.MANUAL:
+        
+        teethdf = pd.DataFrame()
+        closest_proj_indecies = []
+        closest_ys = []
+        side = [50 for _ in range(len(x))]
+
+        for tooth_index in range(len(x)):
+            proj_data = project_1D.proj_data(x[tooth_index], y[tooth_index],coeff) #return (x, distance), x is a list
+            closest_x = proj_data[0] #return (x, distance), x is a list
+            closest_y = proj_data[1]
+            closest_proj_indecies.append(np.argmin([abs(i-closest_x) for i in fit[0]]))
+            closest_ys.append(CONFIG.SAMPLING_WIDTH+closest_y)
+
+        teethdf["x"] = closest_proj_indecies
+        teethdf["y"] = closest_ys
+        teethdf["w"] = side
+        teethdf["h"] = side
+        df_manual = pd.read_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
+
+        # if center tooth doesn't exist 
+        if "Tooth.CENTER_T" not in df_manual["type"] and "Tooth.CENTER_G" not in df_manual["type"]:
+            center_ind = cross_prod_center(coeff, df)
+            if df_manual["type"][center_ind] == "Tooth.TOOTH":
+                df_manual["type"][center_ind] = "Tooth.CENTER_T"
+            elif df_manual["type"][center_ind] == "Tooth.GAP":
+                df_manual["type"][center_ind] = "Tooth.CENTER_G"
+            df_manual.to_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
+        teethdf["type"] = df_manual["type"]
+        
+        GUI.plot_teeth(file_name, img_name, Match.ONE_D, teethdf)
 
 
 def equidistant_set(start, end, coeff):

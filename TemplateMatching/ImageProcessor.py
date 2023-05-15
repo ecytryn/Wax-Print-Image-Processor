@@ -12,6 +12,7 @@ import template_matching
 import noise_filtering
 import hyperbola_solve
 import GUI
+import plot_manual
 from utils import Match, CONFIG, make_dir, suffix, end_procedure
 
 
@@ -126,4 +127,17 @@ class ImageProcessor:
             print(err)
         if display_time:
             print(f"MANUAL      | '{self.file_name}': {time.time()-start_time} s")
+        end_procedure()
+
+
+    @staticmethod
+    def plot_manual(display_time: bool = False):
+        start_time = time.time()
+        try:
+            plot_manual.plot_manual()
+            plot_manual.plot_manual_even()
+        except RuntimeError as err:
+            print(err)
+        if display_time:
+            print(f"PLOT MANUAL | {time.time()-start_time} s")
         end_procedure()
