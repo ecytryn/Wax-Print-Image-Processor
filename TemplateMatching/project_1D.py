@@ -33,11 +33,12 @@ def proj_data(x, y, coeff):
     (A,B,C,D,E) = coeff
     solved = fsolve(func, x, [x, y, coeff])
     hyperbola_x = solved[0]
-    assert len(solved), f"More than one solution found for closest point to the hyperbola form {x,y}"
+    assert len(solved) == 1, f"More than one solution found for closest point to the hyperbola form {x,y}, {solved}, {coeff}"
     discrim = (B*hyperbola_x+E)**2-4*C*(A*hyperbola_x**2+D*hyperbola_x-1)
     hyperbola_y = ((-B*hyperbola_x-E+np.sqrt(discrim))/(2*C))
     distance = np.sqrt((x-hyperbola_x)**2+(y-hyperbola_y)**2)
-    if x-hyperbola_x >= 0:
+
+    if y >= hyperbola_y: # if the data point is on the inside of the jaw
         return (hyperbola_x, distance)
     else:
         return (hyperbola_x, -distance)

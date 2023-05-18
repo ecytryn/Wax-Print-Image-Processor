@@ -85,7 +85,7 @@ class CONFIG:
 
     "PLOT_MANUAL"
     # how much "time" elapsed between each image
-    TIME = 3
+    TIME = 2
     # PATH to plot results from; this folder will be seen to contain the result data
     PATH = os.path.join(os.getcwd(),"processed", "manual data 1D")
 

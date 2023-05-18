@@ -70,7 +70,7 @@ class ImageProcessor:
         else:
             path = os.path.join('processed', "match data",f"{self.img_name}.csv")
             assert os.path.isfile(path), f"'{self.img_name}.csv' does not exist - did you run match first?"
-        noise_filtering.continuity_filter(self.file_name, self.img_name, manual)
+        noise_filtering.continuity_filter(self.file_name, self.img_name)
         if display_time:
             print(f"FILTER      | '{self.file_name}': {time.time()-start_time} s")
         end_procedure()

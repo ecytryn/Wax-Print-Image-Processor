@@ -2,13 +2,13 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from utils import CONFIG
+from utils import CONFIG, Filter
 
 
-def continuity_filter(file_name, img_name, manual):
+def continuity_filter(file_name, img_name):
 
     current_dir = os.getcwd()
-    if manual:
+    if CONFIG.FILTER == Filter.MANUAL:
         os.chdir(os.path.join(current_dir,'processed', "manual data"))
     else:
         os.chdir(os.path.join(current_dir,'processed', "match data"))

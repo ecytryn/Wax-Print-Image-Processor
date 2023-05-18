@@ -132,8 +132,8 @@ def solve(file_name, img_name, img_height):
         side = [50 for _ in range(len(x))]
 
         for tooth_index in range(len(x)):
-            proj_data = project_1D.proj_data(x[tooth_index], y[tooth_index],coeff) #return (x, distance), x is a list
-            closest_x = proj_data[0] #return (x, distance), x is a list
+            proj_data = project_1D.proj_data(x[tooth_index], y[tooth_index],coeff) #return (x, distance)
+            closest_x = proj_data[0] 
             closest_y = proj_data[1]
             closest_proj_indecies.append(np.argmin([abs(i-closest_x) for i in fit[0]]))
             closest_ys.append(CONFIG.SAMPLING_WIDTH+closest_y)
@@ -143,15 +143,21 @@ def solve(file_name, img_name, img_height):
         teethdf["w"] = side
         teethdf["h"] = side
         df_manual = pd.read_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
+        center_ind = cross_prod_center(coeff, df)
 
+        t = df_manual.index[df_manual["type"]=="Tooth.CENTER_T"].to_numpy()
+        g = df_manual.index[df_manual["type"]=="Tooth.CENTER_G"].to_numpy()
+        assert len(t)+len(g) < 2, f"more than one center tooth or gap found in {img_name}.csv"
         # if center tooth doesn't exist 
-        if "Tooth.CENTER_T" not in df_manual["type"] and "Tooth.CENTER_G" not in df_manual["type"]:
-            center_ind = cross_prod_center(coeff, df)
+        if len(t)+len(g) == 0:
             if df_manual["type"][center_ind] == "Tooth.TOOTH":
                 df_manual["type"][center_ind] = "Tooth.CENTER_T"
             elif df_manual["type"][center_ind] == "Tooth.GAP":
                 df_manual["type"][center_ind] = "Tooth.CENTER_G"
             df_manual.to_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
+        else:
+            if len(t) > 0 and center_ind != t[0] or len(g) > 0 and center_ind != g[0]:
+                    print(f"Alternative center index found: {center_ind}; please ensure the current center index is correct")
         teethdf["type"] = df_manual["type"]
         
         GUI.plot_teeth(file_name, img_name, Match.ONE_D, teethdf)

@@ -254,6 +254,6 @@ def plot_teeth(file_name, img_name, mode, df):
 
     image = cv2.imread(img_path)
     for i in range(len(x)):
-        image = draw_tooth(image, int(x[i]), int(y[i]), w[i], h[i], type[i])
+        image = draw_tooth(image, int(x[i]-1/2*w[i]), int(y[i]-1/2*h[i]), w[i], h[i], type[i])
 
     save(file_name, img_name, mode, image, df)
