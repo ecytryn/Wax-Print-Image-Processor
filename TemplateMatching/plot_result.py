@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 from utils import suffix, CONFIG
 
 
-def plotManual():
-    data = sorted([file for file in os.listdir(CONFIG.PATH) if suffix(file) == ".csv"])
+def arclength():
+
+    data = folder_search()
     tooth = []
     toothY = []
     gap = []
@@ -53,8 +54,9 @@ def plotManual():
 
     fig.savefig("res.png")
 
-def plotManualEven():
-    data = sorted([file for file in os.listdir(CONFIG.PATH) if suffix(file) == ".csv"])
+def even():
+
+    data = folder_search()
     tooth = []
     toothY = []
     gap = []
@@ -99,3 +101,20 @@ def plotManualEven():
     ax.scatter(centerT, centerTY, c="r")
 
     fig.savefig("res_even.png")
+
+
+def folder_search() -> list(str):
+    '''
+    return the list of csv within the "results" folder specified in CONFIG. 
+    '''
+    root = CONFIG.PATH
+    allDir = [x[0] for x in os.walk(root)]
+    csv = []
+    
+    for dir in allDir:
+        items = os.listdir()
+        for item in items:
+            if os.path.splitext(item)[1] == ".csv":
+                csv.append(os.path.join(dir, item))
+    
+    return sorted(csv)

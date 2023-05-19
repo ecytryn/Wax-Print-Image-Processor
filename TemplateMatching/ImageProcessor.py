@@ -12,7 +12,7 @@ import template_matching
 import noise_filtering
 import hyperbola_solve
 import GUI
-import plot_manual
+import plot_result
 from utils import Match, CONFIG, Filter, makeDir, suffix, endProcedure
 
 
@@ -151,8 +151,8 @@ class ImageProcessor:
         '''
         startTime = time.time()
         try:
-            plot_manual.plotManual()
-            plot_manual.plotManualEven()
+            plot_result.arclength()
+            plot_result.even()
         except RuntimeError as err:
             print(err)
         if displayTime:
