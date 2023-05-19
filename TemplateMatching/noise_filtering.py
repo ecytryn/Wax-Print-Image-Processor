@@ -5,26 +5,26 @@ import pandas as pd
 from utils import CONFIG, Filter
 
 
-def continuity_filter(file_name, img_name):
+def continuityFilter(fileName, imgName):
 
-    current_dir = os.getcwd()
+    currDir = os.getcwd()
     if CONFIG.FILTER == Filter.MANUAL:
-        os.chdir(os.path.join(current_dir,'processed', "manual data"))
+        os.chdir(os.path.join(currDir,'processed', "manual data"))
     else:
-        os.chdir(os.path.join(current_dir,'processed', "match data"))
-    df = pd.read_csv(f"{img_name}.csv")
-    df_filter = pd.DataFrame()
-    os.chdir(current_dir)
+        os.chdir(os.path.join(currDir,'processed', "match data"))
+    df = pd.read_csv(f"{imgName}.csv")
+    dfFilter = pd.DataFrame()
+    os.chdir(currDir)
 
-    df_filter['x'] = df['x']+df['w']/2
-    df_filter['y'] = df['y']+df['h']/2
+    dfFilter['x'] = df['x']+df['w']/2
+    dfFilter['y'] = df['y']+df['h']/2
 
-    x = df_filter['x']
-    y = df_filter['y']
-    df_filter['gradient'] = np.gradient(y, x)
-    df_filter['smoothness'] = np.gradient(df_filter['gradient'], x)
-    df_filter['gradient_even'] = np.gradient(y)
-    df_filter['smoothness_even'] = np.gradient(df_filter['gradient'])
+    x = dfFilter['x']
+    y = dfFilter['y']
+    dfFilter['gradient'] = np.gradient(y, x)
+    dfFilter['smoothness'] = np.gradient(dfFilter['gradient'], x)
+    dfFilter['gradientEven'] = np.gradient(y)
+    dfFilter['smoothnessEven'] = np.gradient(dfFilter['gradient'])
 
     fig, ((ax1, ax2, ax3, ax4),(ax5, ax6, ax7, ax8), (ax9, ax10, ax11, ax12)) = plt.subplots(3, 4)
     fig.set_figwidth(CONFIG.WIDTH_SIZE)
@@ -33,82 +33,82 @@ def continuity_filter(file_name, img_name):
     ax1.plot(x,y,'.-b')
     ax1.set_title("Original", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    ax2.plot(x,df_filter['gradient'],'.-r', label='gradient')
-    ax2.plot(x,df_filter['gradient_even'],'.-g', label='gradient even')
-    ax3.plot(x,df_filter['smoothness'],'.-r', label='smoothness')
-    ax3.plot(x,df_filter['smoothness_even'],'.-g', label='smoothness even')
+    ax2.plot(x,dfFilter['gradient'],'.-r', label='gradient')
+    ax2.plot(x,dfFilter['gradientEven'],'.-g', label='gradient even')
+    ax3.plot(x,dfFilter['smoothness'],'.-r', label='smoothness')
+    ax3.plot(x,dfFilter['smoothnessEven'],'.-g', label='smoothness even')
     ax2.legend(fontsize=10)
     ax3.legend(fontsize=10)
     ax2.set_title("Gradient Raw", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax3.set_title("Smoothness Raw", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    df_grad = df_filter.copy()
-    df_grad.drop(df_grad[df_grad['gradient'] > CONFIG.GRAD_THRESHOLD].index, inplace=True)
-    df_grad.drop(df_grad[df_grad['gradient'] < -CONFIG.GRAD_THRESHOLD].index, inplace=True)
-    df_grad = df_grad[df_grad['gradient'].notna()]
-    x_grad = df_grad['x']
-    y_grad = df_grad['y']
-    gradient = df_grad['gradient']
+    dfGrad = dfFilter.copy()
+    dfGrad.drop(dfGrad[dfGrad['gradient'] > CONFIG.GRAD_THRESHOLD].index, inplace=True)
+    dfGrad.drop(dfGrad[dfGrad['gradient'] < -CONFIG.GRAD_THRESHOLD].index, inplace=True)
+    dfGrad = dfGrad[dfGrad['gradient'].notna()]
+    xGrad = dfGrad['x']
+    yGrad = dfGrad['y']
+    gradient = dfGrad['gradient']
 
-    df_smooth = df_filter.copy()
-    df_smooth.drop(df_smooth[df_smooth['smoothness'] > CONFIG.SMOOTH_THRESHOLD].index, inplace=True)
-    df_smooth.drop(df_smooth[df_smooth['smoothness'] < -CONFIG.SMOOTH_THRESHOLD].index, inplace=True)
-    df_smooth = df_smooth[df_smooth['smoothness'].notna()]
-    x_smooth = df_smooth['x']
-    y_smooth = df_smooth['y']
-    smoothness = df_smooth['smoothness']
+    dfSmooth = dfFilter.copy()
+    dfSmooth.drop(dfSmooth[dfSmooth['smoothness'] > CONFIG.SMOOTH_THRESHOLD].index, inplace=True)
+    dfSmooth.drop(dfSmooth[dfSmooth['smoothness'] < -CONFIG.SMOOTH_THRESHOLD].index, inplace=True)
+    dfSmooth = dfSmooth[dfSmooth['smoothness'].notna()]
+    xSmooth = dfSmooth['x']
+    ySmooth = dfSmooth['y']
+    smoothness = dfSmooth['smoothness']
 
-    df_grad_even = df_filter.copy()
-    df_grad_even.drop(df_grad_even[df_grad_even['gradient_even'] > CONFIG.GRAD_EVEN_THRESHOLD].index, inplace=True)
-    df_grad_even.drop(df_grad_even[df_grad_even['gradient_even'] < -CONFIG.GRAD_EVEN_THRESHOLD].index, inplace=True)
-    df_grad_even = df_grad_even[df_grad_even['gradient_even'].notna()]
-    x_grad_even = df_grad_even['x']
-    y_grad_even = df_grad_even['y']
-    gradient_even = df_grad_even['gradient_even']
+    dfGradEven = dfFilter.copy()
+    dfGradEven.drop(dfGradEven[dfGradEven['gradientEven'] > CONFIG.GRAD_EVEN_THRESHOLD].index, inplace=True)
+    dfGradEven.drop(dfGradEven[dfGradEven['gradientEven'] < -CONFIG.GRAD_EVEN_THRESHOLD].index, inplace=True)
+    dfGradEven = dfGradEven[dfGradEven['gradientEven'].notna()]
+    xGradEven = dfGradEven['x']
+    yGradEven = dfGradEven['y']
+    gradientEven = dfGradEven['gradientEven']
 
-    df_smooth_even = df_filter.copy()
-    df_smooth_even.drop(df_smooth_even[df_smooth_even['smoothness_even'] > CONFIG.SMOOTH_EVEN_THRESHOLD].index, inplace=True)
-    df_smooth_even.drop(df_smooth_even[df_smooth_even['smoothness_even'] < -CONFIG.SMOOTH_EVEN_THRESHOLD].index, inplace=True)
-    df_smooth_even = df_smooth_even[df_smooth_even['smoothness_even'].notna()]
-    x_smooth_even = df_smooth_even['x']
-    y_smooth_even = df_smooth_even['y']
-    smoothness_even = df_smooth_even['smoothness_even']
+    dfSmoothEven = dfFilter.copy()
+    dfSmoothEven.drop(dfSmoothEven[dfSmoothEven['smoothnessEven'] > CONFIG.SMOOTH_EVEN_THRESHOLD].index, inplace=True)
+    dfSmoothEven.drop(dfSmoothEven[dfSmoothEven['smoothnessEven'] < -CONFIG.SMOOTH_EVEN_THRESHOLD].index, inplace=True)
+    dfSmoothEven = dfSmoothEven[dfSmoothEven['smoothnessEven'].notna()]
+    xSmoothEven = dfSmoothEven['x']
+    ySmoothEven = dfSmoothEven['y']
+    smoothnessEven = dfSmoothEven['smoothnessEven']
 
-    ax5.plot(x_grad,y_grad,'.-b')
-    ax6.plot(x_grad,gradient,'.-r')
+    ax5.plot(xGrad,yGrad,'.-b')
+    ax6.plot(xGrad,gradient,'.-r')
     ax5.set_title("Gradient Filtering", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax6.set_title(f"Filtered Gradient: Threshold {CONFIG.GRAD_THRESHOLD}", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    ax7.plot(x_grad_even,y_grad_even,'.-b')
-    ax8.plot(x_grad_even,gradient_even,'.-g')
+    ax7.plot(xGradEven,yGradEven,'.-b')
+    ax8.plot(xGradEven,gradientEven,'.-g')
     ax7.set_title("Even Gradient Filtering", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax8.set_title(f"Filtered Even Gradient: Threshold {CONFIG.GRAD_EVEN_THRESHOLD}", fontsize=10, fontweight="bold", fontname='Times New Roman')
     
-    ax9.plot(x_smooth, y_smooth, '.-b')
-    ax10.plot(x_smooth, smoothness, '.-r')
+    ax9.plot(xSmooth, ySmooth, '.-b')
+    ax10.plot(xSmooth, smoothness, '.-r')
     ax9.set_title("Smoothness Filtering", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax10.set_title(f"Filtered Smoothness: Threshold {CONFIG.SMOOTH_THRESHOLD}", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
-    ax11.plot(x_smooth_even,y_smooth_even,'.-b')
-    ax12.plot(x_smooth_even,smoothness_even,'.-g')
+    ax11.plot(xSmoothEven,ySmoothEven,'.-b')
+    ax12.plot(xSmoothEven,smoothnessEven,'.-g')
     ax11.set_title("Even Smoothness Filtering", fontsize=10, fontweight="bold", fontname='Times New Roman')
     ax12.set_title(f"Filtered Even Smoothness: Threshold {CONFIG.SMOOTH_EVEN_THRESHOLD}", fontsize=10, fontweight="bold", fontname='Times New Roman')
 
     fig.tight_layout()
 
     # saves to coordinates saves marked image in appropriate folders
-    os.chdir(os.path.join(current_dir,'processed', "filter visualization"))
-    plt.savefig(file_name)
-    os.chdir(current_dir)
+    os.chdir(os.path.join(currDir,'processed', "filter visualization"))
+    plt.savefig(fileName)
+    os.chdir(currDir)
 
-    os.chdir(os.path.join(current_dir,'processed', "filter data"))
-    df_filter.to_csv(f"{img_name}.csv")
-    df_grad.to_csv(f"{img_name}_grad.csv")
-    df_grad_even.to_csv(f"{img_name}_gradeven.csv")
-    df_smooth.to_csv(f"{img_name}_smooth.csv")
-    df_smooth_even.to_csv(f"{img_name}_smootheven.csv")
-    os.chdir(current_dir)        
+    os.chdir(os.path.join(currDir,'processed', "filter data"))
+    dfFilter.to_csv(f"{imgName}.csv")
+    dfGrad.to_csv(f"{imgName}Grad.csv")
+    dfGradEven.to_csv(f"{imgName}GradEven.csv")
+    dfSmooth.to_csv(f"{imgName}Smooth.csv")
+    dfSmoothEven.to_csv(f"{imgName}SmoothEven.csv")
+    os.chdir(currDir)        
 
 
-def graph_filter():
+def graphFilter():
     pass

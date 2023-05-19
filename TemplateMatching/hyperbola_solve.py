@@ -9,7 +9,7 @@ from scipy.optimize import fsolve
 
 
 #helper functions
-from cross_prod_center import cross_prod_center
+from cross_prod_center import crossProdCenter
 import GUI
 from utils import CONFIG, Filter, Match
 import project_1D
@@ -23,147 +23,147 @@ This file contains:
 4. Plot Hyperbola Linear - returns a set of coordinates on the hyperbola equidistant in terms of x
 '''
 
-def solve(file_name, img_name, img_height):
+def solve(fileName, imgName, imgHeight):
 
-    current_dir = os.getcwd()
-    os.chdir(os.path.join(current_dir,'processed', "filter data"))
+    currDir = os.getcwd()
+    os.chdir(os.path.join(currDir,'processed', "filter data"))
     if CONFIG.FILTER == Filter.GRADIENT:
-        df = pd.read_csv(f"{img_name}_grad.csv")
+        df = pd.read_csv(f"{imgName}Grad.csv")
     elif CONFIG.FILTER == Filter.GRADIENT_EVEN:
-        df = pd.read_csv(f"{img_name}_gradeven.csv")
+        df = pd.read_csv(f"{imgName}Gradeven.csv")
     elif CONFIG.FILTER == Filter.SMOOTH:
-        df = pd.read_csv(f"{img_name}_smooth.csv")
+        df = pd.read_csv(f"{imgName}Smooth.csv")
     elif CONFIG.FILTER == Filter.SMOOTH_EVEN:
-        df = pd.read_csv(f"{img_name}_smootheven.csv")
+        df = pd.read_csv(f"{imgName}Smootheven.csv")
     else:
-        df = pd.read_csv(f"{img_name}.csv")
-    os.chdir(current_dir)
+        df = pd.read_csv(f"{imgName}.csv")
+    os.chdir(currDir)
 
     x = df["x"].to_numpy()
     y = df["y"].to_numpy()
 
-    matrix_t = [x**2, x*y, y**2, x, y]
-    matrix = np.transpose(matrix_t)
-    coeff = np.matmul(np.linalg.inv(np.matmul(matrix_t, matrix)),np.matmul(matrix_t, np.ones(np.shape(matrix)[0])))
+    matrixT = [x**2, x*y, y**2, x, y]
+    matrix = np.transpose(matrixT)
+    coeff = np.matmul(np.linalg.inv(np.matmul(matrixT, matrix)),np.matmul(matrixT, np.ones(np.shape(matrix)[0])))
 
     (A,B,C,D,E) = coeff
 
     error = False
-    ends = np.roots([A, img_height*B+D, -1+C*img_height**2+E*img_height])
+    ends = np.roots([A, imgHeight*B+D, -1+C*imgHeight**2+E*imgHeight])
 
     if B**2-4*A*C < 0:
-        fit = plot_hyperbola_linear(min(ends), max(ends), coeff)
+        fit = plotHyperbolaLinear(min(ends), max(ends), coeff)
         error = True
     else: 
         try: 
-            fit = equidistant_set(min(ends), max(ends), coeff)
+            fit = equidistantSet(min(ends), max(ends), coeff)
         except RuntimeError as err:
             raise RuntimeError(err)
 
-    img_path = os.path.join('img', file_name)
-    img = cv2.imread(img_path)
+    imgPath = os.path.join('img', fileName)
+    img = cv2.imread(imgPath)
     fig, ax = plt.subplots()
     ax.imshow(img, cmap=mpl.colormaps['gray'])
     ax.plot(fit[0], fit[1], '.-r', label="fit")
 
-    target = os.path.join(current_dir,"processed", "fit visualization")
+    target = os.path.join(currDir,"processed", "fit visualization")
     os.chdir(target)
-    fig.savefig(file_name)
-    os.chdir(current_dir)
+    fig.savefig(fileName)
+    os.chdir(currDir)
 
     if error:
-        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {file_name[0:len(file_name)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
+        raise RuntimeError(f"Unable to fit a Hyperbola or Parabola; Circle or Ellipse detected.\nSee {fileName[0:len(fileName)-4]}.jpg in /processed/fit visualization for more detail.\nA={A}, B={B}, C={C}, D={D}, E={E}")
 
-    projected_img = []
-    normals_x = []
-    normals_y = []
-    tangents_x =[]
-    tangents_y = []
+    projectedImg = []
+    normalsX = []
+    normalsY = []
+    tangentsX =[]
+    tangentsY = []
 
     for i in range(len(fit[0])):
-        projection = project_1D.project_one(fit[0][i], fit[1][i], coeff)
+        projection = project_1D.projectOne(fit[0][i], fit[1][i], coeff)
         temp = []
-        normals_x.append(projection[2][0])
-        normals_y.append(projection[2][1])
-        tangents_x.append(projection[3][0])
-        tangents_y.append(projection[3][1])
+        normalsX.append(projection[2][0])
+        normalsY.append(projection[2][1])
+        tangentsX.append(projection[3][0])
+        tangentsY.append(projection[3][1])
         for j in range(len(projection[0])):
             try:
                 pixel = img[projection[1][j],projection[0][j]]
                 temp.append([pixel[0], pixel[1], pixel[2]])
             except IndexError:
                 temp.append([255,255,255])
-        projected_img.append(temp)
+        projectedImg.append(temp)
         ax.plot(projection[0], projection[1], '.-y', label="projection")
 
     # sets up a data frame to store projection data
-    df_project_data = pd.DataFrame()
-    df_project_data["arclength loc"] = range(len(fit[0]))
-    df_project_data["x_2D"] = fit[0]
-    df_project_data["y_2D"] = fit[1]
-    df_project_data["tangent_x"] = tangents_x
-    df_project_data["tangent_y"] = tangents_y
-    df_project_data["normal_x"] = normals_x
-    df_project_data["normal_y"] = normals_y
+    dfProjData = pd.DataFrame()
+    dfProjData["arclength loc"] = range(len(fit[0]))
+    dfProjData["x2D"] = fit[0]
+    dfProjData["y2D"] = fit[1]
+    dfProjData["tangentX"] = tangentsX
+    dfProjData["tangentY"] = tangentsY
+    dfProjData["normalX"] = normalsX
+    dfProjData["normalY"] = normalsY
 
-    target = os.path.join(current_dir,"processed", "projection data", f"{img_name}.csv")
-    df_project_data.to_csv(target)
+    target = os.path.join(currDir,"processed", "projection data", f"{imgName}.csv")
+    dfProjData.to_csv(target)
 
-    target = os.path.join(current_dir,"processed", "projection")
+    target = os.path.join(currDir,"processed", "projection")
     os.chdir(target)
-    projected_img_t = cv2.transpose(np.array(projected_img))
-    cv2.imwrite(file_name, projected_img_t)
-    os.chdir(current_dir)
+    projectedImgT = cv2.transpose(np.array(projectedImg))
+    cv2.imwrite(fileName, projectedImgT)
+    os.chdir(currDir)
 
     # intensity analysis; uncomment to perform
-    # analyze_projection.avg_intensity(file_name, projected_img)
+    # analyze_projection.avgIntensity(fileName, projectedImg)
 
-    target = os.path.join(current_dir,"processed", "projection sampling")
+    target = os.path.join(currDir,"processed", "projection sampling")
     os.chdir(target)
-    fig.savefig(file_name)
-    os.chdir(current_dir)
+    fig.savefig(fileName)
+    os.chdir(currDir)
 
 
     if CONFIG.FILTER == Filter.MANUAL:
         
-        teethdf = pd.DataFrame()
-        closest_proj_indecies = []
-        closest_ys = []
+        teethDf = pd.DataFrame()
+        closestProjIndeces = []
+        closestYs = []
         side = [50 for _ in range(len(x))]
 
-        for tooth_index in range(len(x)):
-            proj_data = project_1D.proj_data(x[tooth_index], y[tooth_index],coeff) #return (x, distance)
-            closest_x = proj_data[0] 
-            closest_y = proj_data[1]
-            closest_proj_indecies.append(np.argmin([abs(i-closest_x) for i in fit[0]]))
-            closest_ys.append(CONFIG.SAMPLING_WIDTH+closest_y)
+        for toothInd in range(len(x)):
+            projData = project_1D.projectData(x[toothInd], y[toothInd],coeff) #return (x, distance)
+            closestX = projData[0] 
+            closestY = projData[1]
+            closestProjIndeces.append(np.argmin([abs(i-closestX) for i in fit[0]]))
+            closestYs.append(CONFIG.SAMPLING_WIDTH+closestY)
 
-        teethdf["x"] = closest_proj_indecies
-        teethdf["y"] = closest_ys
-        teethdf["w"] = side
-        teethdf["h"] = side
-        df_manual = pd.read_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
-        center_ind = cross_prod_center(coeff, df)
+        teethDf["x"] = closestProjIndeces
+        teethDf["y"] = closestYs
+        teethDf["w"] = side
+        teethDf["h"] = side
+        dfManual = pd.read_csv(os.path.join("processed", "manual data", f"{imgName}.csv"))
+        centerInd = crossProdCenter(coeff, df)
 
-        t = df_manual.index[df_manual["type"]=="Tooth.CENTER_T"].to_numpy()
-        g = df_manual.index[df_manual["type"]=="Tooth.CENTER_G"].to_numpy()
-        assert len(t)+len(g) < 2, f"more than one center tooth or gap found in {img_name}.csv"
+        t = dfManual.index[dfManual["type"]=="Tooth.CENTER_T"].to_numpy()
+        g = dfManual.index[dfManual["type"]=="Tooth.CENTER_G"].to_numpy()
+        assert len(t)+len(g) < 2, f"more than one center tooth or gap found in {imgName}.csv"
         # if center tooth doesn't exist 
         if len(t)+len(g) == 0:
-            if df_manual["type"][center_ind] == "Tooth.TOOTH":
-                df_manual["type"][center_ind] = "Tooth.CENTER_T"
-            elif df_manual["type"][center_ind] == "Tooth.GAP":
-                df_manual["type"][center_ind] = "Tooth.CENTER_G"
-            df_manual.to_csv(os.path.join("processed", "manual data", f"{img_name}.csv"))
+            if dfManual["type"][centerInd] == "Tooth.TOOTH":
+                dfManual["type"][centerInd] = "Tooth.CENTER_T"
+            elif dfManual["type"][centerInd] == "Tooth.GAP":
+                dfManual["type"][centerInd] = "Tooth.CENTER_G"
+            dfManual.to_csv(os.path.join("processed", "manual data", f"{imgName}.csv"))
         else:
-            if len(t) > 0 and center_ind != t[0] or len(g) > 0 and center_ind != g[0]:
-                    print(f"Alternative center index found: {center_ind}; please ensure the current center index is correct")
-        teethdf["type"] = df_manual["type"]
+            if len(t) > 0 and centerInd != t[0] or len(g) > 0 and centerInd != g[0]:
+                    print(f"Alternative center index found: {centerInd}; please ensure the current center index is correct")
+        teethDf["type"] = dfManual["type"]
         
-        GUI.plot_teeth(file_name, img_name, Match.ONE_D, teethdf)
+        GUI.plotTeeth(fileName, imgName, Match.ONE_D, teethDf)
 
 
-def equidistant_set(start, end, coeff):
+def equidistantSet(start, end, coeff):
 
     # equidistant in x
     x = np.linspace(start, end, num=int(end-start)+1)
@@ -172,44 +172,44 @@ def equidistant_set(start, end, coeff):
     constant = coeff[0]*x**2+coeff[3]*x-1
 
     #conic: Ax**2+Bxy+Cy**2+Dx+Ey-1=0
-    #circle parameterization: x = prev_x + cos(t); y = prev_y + sin(t)
+    #circle parameterization: x = prevX + cos(t); y = prevY + sin(t)
     #intersection: plug
 
-    start_roots = [r for r in np.roots([quadratic[0], linear[0], constant[0]]) if r >= 0]
-    start_y = min(start_roots)
+    startRoots = [r for r in np.roots([quadratic[0], linear[0], constant[0]]) if r >= 0]
+    startY = min(startRoots)
 
     result = ([],[])
-    prev_x = start
-    prev_y = start_y
+    prevX = start
+    prevY = startY
 
-    while prev_x < end:
-        r1 = fsolve(func, np.pi/4, [prev_x, prev_y, coeff])
-        r2 = fsolve(func, -np.pi/4, [prev_x, prev_y, coeff])
+    while prevX < end:
+        r1 = fsolve(func, np.pi/4, [prevX, prevY, coeff])
+        r2 = fsolve(func, -np.pi/4, [prevX, prevY, coeff])
 
         if np.cos(r1[0])>0:
-            curr_x, curr_y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
+            currX, currY = prevX+np.cos(r1[0]), prevY+np.sin(r1[0])
         elif np.cos(r2[0])>0:
-            curr_x, curr_y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
+            currX, currY = prevX+np.cos(r2[0]), prevY+np.sin(r2[0])
         else:
-            curr_1x, curr_1y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
-            curr_2x, curr_2y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
+            curr1x, curr1y = prevX+np.cos(r1[0]), prevY+np.sin(r1[0])
+            curr2x, curr2y = prevX+np.cos(r2[0]), prevY+np.sin(r2[0])
             if r1[0] < np.pi/2 and r1[0] > -np.pi/2:
-                raise RuntimeError(f"Equidistant Points Error: r1x_0 = {prev_x}, r1y_0 = {prev_y}, r1x_1={curr_1x}, r1x_2={curr_1y}\nr2x_0 = {prev_x}, r2y_0 = {prev_y}, r2x_1={curr_2x}, r2x_2={curr_2y}\n(A,B,C,D,E) = {coeff}\n Try readjusting some data through GUI")
-        result[0].append(curr_x)
-        result[1].append(curr_y)
-        prev_x = curr_x
-        prev_y = curr_y
+                raise RuntimeError(f"Equidistant Points Error: r1x_0 = {prevX}, r1y_0 = {prevY}, r1x_1={curr1x}, r1x_2={curr1y}\nr2x_0 = {prevX}, r2y_0 = {prevY}, r2x_1={curr2x}, r2x_2={curr2y}\n(A,B,C,D,E) = {coeff}\n Try readjusting some data through GUI")
+        result[0].append(currX)
+        result[1].append(currY)
+        prevX = currX
+        prevY = currY
 
     return result
     
 
 def func(t, args):
-    (prev_x, prev_y, coeff) = args
+    (prevX, prevY, coeff) = args
     (A,B,C,D,E) = coeff
-    return A*(prev_x+np.cos(t))**2+B*(prev_x+np.cos(t))*(prev_y+np.sin(t))+C*(prev_y+np.sin(t))**2+D*(prev_x+np.cos(t))+E*(prev_y+np.sin(t))-1
+    return A*(prevX+np.cos(t))**2+B*(prevX+np.cos(t))*(prevY+np.sin(t))+C*(prevY+np.sin(t))**2+D*(prevX+np.cos(t))+E*(prevY+np.sin(t))-1
 
 
-def plot_hyperbola_linear(start, end, coeff):
+def plotHyperbolaLinear(start, end, coeff):
     # equidistant in x
     x = np.linspace(start, end, num=int(end-start)+1)
     quadratic = coeff[2]*np.ones(len(x))

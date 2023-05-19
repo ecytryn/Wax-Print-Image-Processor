@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import cv2
 from typing import Tuple
+import datetime
 
 
 # enum classes
@@ -111,7 +112,7 @@ class CONFIG:
 
 
 # general helper functions
-def make_dir(dir: str):
+def makeDir(dir: str):
     '''create a specified directory if it doesn't already exist'''
     if not os.path.isdir(dir):
         os.mkdir(dir)
@@ -120,12 +121,24 @@ def suffix(file: str):
     '''returns the suffix of a file'''
     return os.path.splitext(file)[1]
 
-def end_procedure():
+def endProcedure():
     '''closes all current matplotlib and cv2 windows'''
     plt.close("all")
     cv2.destroyAllWindows()
 
-def print_divider():
+def printDivider():
     '''prints a divider into the console'''
     print("============================================================")
+
+
+def parseDate(fileName):
+    '''parses the date from the name of an image (assumes format YYYY_MM_DD...)'''
+    try:
+        year = int(fileName[0:4])
+        month = int(fileName[5:7])
+        day = int(fileName[8:10])
+    except Exception as e:
+        print(f"filename {fileName} is not in the correct format")
+
+    return datetime.datetime(year, month, day)
     
