@@ -88,6 +88,7 @@ class CONFIG:
     TIME = 2
     # PATH to plot results from; this folder will be seen to contain the result data
     PATH = os.path.join(os.getcwd(),"processed", "manual")
+    DATA_FILENAME = "manual data 1D.csv"
 
     "OTHERS - STYLISTIC"
     #colors for manual editing; in format (G,B,R) not (R,G,B)!
