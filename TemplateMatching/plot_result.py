@@ -35,28 +35,37 @@ def dataToCSV():
         if len(df) > maxLength:
             maxLength = len(df)
 
-    columns = range(maxCenterIndex + maxLength) - maxCenterIndex
+    # set dataframe shape (1 column for date, the rest for teeth indecies)
+    columns = range(maxCenterIndex + maxLength - 1) - maxCenterIndex
     columns = [str(column) for column in columns]
     dfOutputArclength = pd.DataFrame(columns=["date"]+columns)
     dfOutputBinary = pd.DataFrame(columns=["date"]+columns)
 
+    entrySoFar = 0
     for i in range(len(dates)):
+        # read data
         df = pd.read_csv(data[i])
         x = df["x"].to_numpy()
         types = df["type"]
 
+        #arclength rep = x values of projection; binary data rep = 1 for teeth, 0 for gap
         arclengthDataRep = x
         binaryDataRep = [1 if (types[i] == "Tooth.TOOTH" or types[i] == "Tooth.CENTER_T") else 0 for i in range(len(x))]
 
+        # add front and back padding to obtain the correct shape to insert into dataframe
         arclengthDataRepPad = padding(arclengthDataRep, centerIndecies[i], maxCenterIndex, len(columns))
         binaryDataRepPad = padding(binaryDataRep, centerIndecies[i], maxCenterIndex, len(columns))
 
+        # prepend date for the "date" column
         dfEntryArclength = [dates[i]] + arclengthDataRepPad
         dfEntryBinary = [dates[i]] + binaryDataRepPad
 
-        dfOutputArclength.loc[len(dfOutputArclength)] = dfEntryArclength
-        dfOutputBinary.loc[len(dfEntryBinary)] = dfEntryBinary
+        # set the maxlength'th entry to be the new entry; aka add new entry
+        dfOutputArclength.loc[entrySoFar] = dfEntryArclength
+        dfOutputBinary.loc[entrySoFar] = dfEntryBinary
+        entrySoFar += 1
 
+    # save to output folder
     dfOutputBinary.to_csv(os.path.join("processed", "output", "binary data.csv"))
     dfOutputArclength.to_csv(os.path.join("processed", "output", "arclength data.csv"))
 
@@ -79,6 +88,10 @@ def folder_search():
 
 
 def padding(dataList, currentCenterIndex, targetCenterIndex, numOfColumns):
+    '''
+    Give dataList front padding to center its currentCenterIndex with the targetCenterIndex
+    and give dateList back padding to have the same number of items as numOfColumns
+    '''
     frontPad = targetCenterIndex - currentCenterIndex
     frontPadd = [None for _ in range(frontPad)]
     frontPadded = frontPadd+list(dataList)
