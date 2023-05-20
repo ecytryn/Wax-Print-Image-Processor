@@ -150,8 +150,7 @@ class ImageProcessor:
         '''
         startTime = time.time()
         try:
-            plot_result.arclength()
-            plot_result.even()
+            plot_result.dataToCSV()
         except RuntimeError as err:
             print(err)
         if displayTime:
@@ -182,6 +181,7 @@ makeDir("fit")
 makeDir("template matching")
 makeDir("projection")
 makeDir("manual")
+makeDir("output")
 os.chdir(current)
 
 # suppresses warnings for a cleaner output (comment to unsuppress)
