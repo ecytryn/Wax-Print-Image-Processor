@@ -20,19 +20,20 @@ def crossProdCenter(coeff, df):
         crossSum = 0
         for c in range(CONFIG.CROSS):
             p1i  = centerIndex + c + 1
-            p2i =  p1i * -1
+            p2i =  centerIndex - c - 1
 
             vec1 = (x[p1i], y[p1i])
             vec2 = (x[p2i], y[p2i])
 
-            vecDiff = np.subtract(vec1, vec2)
-            
+            vecDiff = np.subtract(vec1, vec2)            
             if CONFIG.CROSS_METHOD == Cross.SQAURED:
                 crossSum += np.dot(vecDiff, axisSym)**2
             elif CONFIG.CROSS_METHOD == Cross.ABS:
                 crossSum += abs(np.dot(vecDiff, axisSym))
         crossSums.append(crossSum)
         centerIndex += 1
+    
+
     return np.argmin(crossSums) + CONFIG.CROSS
 
 

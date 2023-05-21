@@ -96,7 +96,7 @@ class CONFIG:
     GAP: Tuple[int, int, int] = (0,255,255) #yellow
     TOOTH: Tuple[int, int, int] = (0,0,255) #red
     # plot style used by matplotlib
-    PLOT_STYLE: str = "bmh"
+    PLOT_STYLE: str = "default"
     #matplotlib figure dimensions (used when output is too crammed)
     WIDTH_SIZE: int = 15
     HEIGHT_SIZE: int = 7
@@ -127,11 +127,11 @@ def printDivider():
 
 
 def parseDate(fileName):
-    '''parses the date from the name of an image (assumes format YYYY_MM_DD...)'''
+    '''parses the date from the name of an image (assumes format MM_DD_YEAR...)'''
     try:
-        year = int(fileName[0:4])
-        month = int(fileName[5:7])
-        day = int(fileName[8:10])
+        year = int(fileName[6:10])
+        month = int(fileName[0:2])
+        day = int(fileName[3:5])
     except Exception as e:
         print(f"filename {fileName} is not in the correct format")
 

@@ -23,9 +23,10 @@ clone = 0
 
 def GUI(fileName, imgName, fileType, mode):
     global x, y, w, h, type, clone, MODE, STORE_MODE
-
     MODE = Tooth.TOOTH
     STORE_MODE = Tooth.TOOTH
+
+    reset_variables()
 
     if mode == Match.ONE_D:
         imgPath = os.path.join("processed", "projection", imgName, f"projection{fileType}")
@@ -43,7 +44,7 @@ def GUI(fileName, imgName, fileType, mode):
             imgDataPath = os.path.join("processed", "template matching", imgName, f"template matching.csv") 
 
     if not os.path.isfile(imgPath):
-        raise RuntimeError(f"{imgPath} does not exist. A hyperbola fit was likely not found or did you run fitProject first?")
+        raise RuntimeError(f"{imgPath} does not exist. Image deleted or a hyperbola fit was likely not found: did you run fitProject first?")
     if not os.path.isfile(imgDataPath):
         print(f"{imgDataPath} not found, empty data set used")
     else:
@@ -56,7 +57,6 @@ def GUI(fileName, imgName, fileType, mode):
             df["type"] = [Tooth.TOOTH for _ in range(len(df.index))]
             type = df["type"]
         else: 
-            type = np.array([])
             for i in df["type"]:
                 if i == "Tooth.TOOTH":
                     type = np.append(type, Tooth.TOOTH)
@@ -257,3 +257,14 @@ def plotPreviousData(fileName, imgName, fileType, mode, df):
         image = drawTooth(image, int(x[i]-1/2*w[i]), int(y[i]-1/2*h[i]), w[i], h[i], type[i])
 
     save(fileName, imgName, fileType, mode, image, df)
+
+
+
+def reset_variables():
+    global x, y, w, h, type, clone
+    x = np.array([])
+    y = np.array([])
+    w = np.array([])
+    h = np.array([])
+    type = np.array([])
+    clone = 0

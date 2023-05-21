@@ -2,9 +2,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from utils import suffix, CONFIG, parseDate
+from utils import CONFIG, parseDate
 
 
 def dataToCSV():
@@ -96,7 +96,7 @@ def plotResult():
     centerGY = []
 
     # convert string into dates
-    dates = [datetime.strptime(d, '%Y-%m-%d') for d in dfArclength["date"]]
+    dates = sorted([datetime.strptime(d, '%Y-%m-%d') for d in dfArclength["date"]])
     # first two columns are: 1) index of df, 2) date
     indexColumns = dfArclength.columns.to_list()[2:] 
 
@@ -143,16 +143,34 @@ def plotResult():
     axFig.suptitle("Arclength Plot")
     binFig.suptitle("Index Plot")
 
-    arcAx.scatter(arcTooth, toothY, c="c")
-    arcAx.scatter(arcGap, gapY, c="#c8c8c8")
-    arcAx.scatter(arcCenterG, centerGY, c="r")
-    arcAx.scatter(arcCenterT, centerTY, c="r")
+    arcAx.scatter(arcTooth, toothY, c="c", s=10)
+    arcAx.scatter(arcGap, gapY, c="#5A5A5A", s=10)
+    arcAx.scatter(arcCenterG, centerGY, c="#FFCCCB", s=10)
+    arcAx.scatter(arcCenterT, centerTY, c="r", s=10)
 
-    binAx.scatter(binTooth, toothY, c="c")
-    binAx.scatter(binGap, gapY, c="#c8c8c8")
-    binAx.scatter(binCenterG, centerGY, c="r")
-    binAx.scatter(binCenterT, centerTY, c="r")
+    binAx.scatter(binTooth, toothY, c="c", s=10)
+    binAx.scatter(binGap, gapY, c="#5A5A5A", s=10)
+    binAx.scatter(binCenterG, centerGY, c="#FFCCCB", s=10)
+    binAx.scatter(binCenterT, centerTY, c="r", s=10)
 
+
+    curr_date = dates[0]
+    last_date = dates[-1]
+    date_ticks = []
+    while curr_date <= last_date:
+        date_ticks.append(curr_date)
+        curr_date += timedelta(days=3)
+
+    teeth_arclength_ticks = np.linspace(0, 5000, num=101)
+
+    arcAx.set_xticks(teeth_arclength_ticks, minor=True)
+    arcAx.set_yticks(date_ticks, minor=True)
+    binAx.set_yticks(date_ticks, minor=True)
+
+    arcAx.grid(which='minor', linestyle=":")
+    binAx.grid(which='minor', linestyle=":")
+    arcAx.grid(which='major')
+    binAx.grid(which='major')
     axFig.tight_layout()
     binFig.tight_layout()
 
