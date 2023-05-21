@@ -161,16 +161,18 @@ def plotResult():
         date_ticks.append(curr_date)
         curr_date += timedelta(days=3)
 
-    teeth_arclength_ticks = np.linspace(0, 5000, num=101)
+    teeth_index_ticks = np.linspace(-50, 50, num=101)
+    teeth_arclength_ticks = np.linspace(-2500, 2500, num=101)
 
     arcAx.set_xticks(teeth_arclength_ticks, minor=True)
+    binAx.set_xticks(teeth_index_ticks, minor=True)
     arcAx.set_yticks(date_ticks, minor=True)
     binAx.set_yticks(date_ticks, minor=True)
 
-    arcAx.grid(which='minor', linestyle=":")
-    binAx.grid(which='minor', linestyle=":")
-    arcAx.grid(which='major')
-    binAx.grid(which='major')
+    arcAx.grid(which='minor', color="k", linestyle=":", alpha=0.5)
+    binAx.grid(which='minor', color="k", linestyle=":", alpha=0.5)
+    arcAx.grid(which='major', color="k", alpha=0.7)
+    binAx.grid(which='major', color="k", alpha=0.7)
     axFig.tight_layout()
     binFig.tight_layout()
 
