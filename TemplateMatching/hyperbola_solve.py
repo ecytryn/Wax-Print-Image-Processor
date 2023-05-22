@@ -154,7 +154,7 @@ def solve(fileName, imgName, fileType, imgHeight):
                     print(f"Alternative center index found: {centerInd}; please ensure the current center index is correct")
         teethDf["type"] = dfManual["type"]
         
-        GUI.plotPreviousData(fileName, imgName, fileType, Match.ONE_D, teethDf)
+        GUI.plot_previous_data(fileName, imgName, fileType, Match.ONE_D, teethDf)
 
 
 def equidistantSet(start, end, coeff):

@@ -121,7 +121,7 @@ class GUI:
         image = cv2.imread(img_path)
         cv2.namedWindow(img_name)
         cv2.setMouseCallback(img_name, self.left_click)
-        mode_index = 0
+        self.mode_index = 0
 
         while True:
 
@@ -146,7 +146,9 @@ class GUI:
                 text_img = cv2.putText(self.clone, "mode: viewing", (10,40), cv2.FONT_HERSHEY_DUPLEX, 1.5, (100,100,100), 2)
             cv2.imshow(img_name, text_img)
 
-            self.wait_keyboard_logic()
+            break_loop = self.wait_keyboard_logic()
+            if break_loop:
+                break
 
 
     def wait_keyboard_logic(self) -> None:
@@ -155,8 +157,7 @@ class GUI:
         """
         key = cv2.waitKey(0)
 
-        # space
-        if key == 32:
+        if key == 32: # space
             # if in viewing mode already, store mode 
             if self._curr_mode == Tooth.NO_BOX:
                 self._curr_mode = self._stored_mode
@@ -164,19 +165,14 @@ class GUI:
                 # else store current mode, change into viewing mode
                 self._stored_mode = self._curr_mode
                 self._curr_mode = Tooth.NO_BOX
-
-        # esc
-        elif key == 27:
+        elif key == 27: # esc
             cv2.destroyAllWindows()
-
-        # tab
-        elif key == 9 and self.MODE != Tooth.NO_BOX:
+            return True
+        elif key == 9 and self._curr_mode != Tooth.NO_BOX: # tab
             # change into the next mode
-            mode_index = (mode_index + 1) % len(self.MODES)
-            self._curr_mode = self.MODES[mode_index]
-
-        # s
-        elif key == ord("s"):
+            self.mode_index = (self.mode_index + 1) % len(self.MODES)
+            self._curr_mode = self.MODES[self.mode_index]
+        elif key == ord("s"): # s
             df_res = pd.DataFrame()
             df_res["x"] = self.x
             df_res["y"] = self.y
@@ -185,26 +181,20 @@ class GUI:
             df_res["type"] = self.type
             df_res.sort_values(by=["x"], inplace=True)
             GUI.save(self.file_name, self.img_name, self.file_type, self.matching_mode, self.clone, df_res)
-
-        # 1
-        elif key == ord("1"):
-            self.MODE = Tooth.TOOTH
-            mode_index = 0
-
-        # 2
-        elif key == ord("2"):
-            self.MODE = Tooth.GAP
-            mode_index = 1
-
-        # 3
-        elif key == ord("3"):
-            self.MODE = Tooth.CENTER_T
-            mode_index = 2
-
-        # 4
-        elif key == ord("4"):
-            self.MODE = Tooth.CENTER_G
-            mode_index = 3
+            return True
+        elif key == ord("1"): # 1
+            self._curr_mode = Tooth.TOOTH
+            self.mode_index = 0
+        elif key == ord("2"): # 2
+            self._curr_mode = Tooth.GAP
+            self.mode_index = 1
+        elif key == ord("3"): # 3
+            self._curr_mode = Tooth.CENTER_T
+            self.mode_index = 2
+        elif key == ord("4"): # 4
+            self._curr_mode = Tooth.CENTER_G
+            self.mode_index = 3
+        return False
     
 
 
@@ -256,7 +246,7 @@ class GUI:
     
     @staticmethod
     def _draw_rectangle(image: list[list[list[int]]], x: int, y: int, 
-                       end_x: int, end_y: int, color: tuple(int, int, int)) -> list[list[list[int]]]:
+                       end_x: int, end_y: int, color: tuple[int, int, int]) -> list[list[list[int]]]:
         """
         Draws a rectangle at a specified location on an image
 
@@ -277,7 +267,7 @@ class GUI:
     
     @staticmethod
     def _draw_center(image: list[list[list[int]]], center_x: int, center_y: int, 
-                    color: tuple(int, int, int)):
+                    color: tuple[int, int, int]):
         """
         Draws a point at a specified location on an image
 
@@ -295,7 +285,7 @@ class GUI:
     
     @staticmethod
     def _draw_label(image: list[list[list[int]]], x: int, y: int, 
-                   color: tuple(int, int, int), label: str) -> list[list[list[int]]]:
+                   color: tuple[int, int, int], label: str) -> list[list[list[int]]]:
         """
         Draws text at a specified location on an image
 
@@ -344,10 +334,10 @@ class GUI:
             
             # if the user clicks a new center, delete the old one
             if draw and (self._curr_mode == Tooth.CENTER_T or self._curr_mode == Tooth.CENTER_G):
-                centerT = np.where(type == Tooth.CENTER_T)
+                centerT = np.where(self.type == Tooth.CENTER_T)
                 for index in centerT[0]:
                     self._delete_index_data(index)
-                centerG = np.where(type == Tooth.CENTER_G)
+                centerG = np.where(self.type == Tooth.CENTER_G)
                 for index in centerG[0]:
                     self._delete_index_data(index)
 
