@@ -157,8 +157,8 @@ class ImageProcessor:
         template_matching_data = {'x':[],'y':[], 'w':[],'h':[], 'score':[], 'match':[]}
         for pt in teeth:
             cv2.rectangle(matched_image, (pt[0], pt[1]), (pt[0] + pt[2], pt[1] + pt[3]), (255,255,0), 2)
-            template_matching_data['x'].append(pt[0])
-            template_matching_data['y'].append(pt[1])
+            template_matching_data['x'].append(int(pt[0] + pt[2]/2 - CONFIG.SQUARE/2))
+            template_matching_data['y'].append(int(pt[1] + pt[3]/2 - CONFIG.SQUARE/2))
             template_matching_data['w'].append(CONFIG.SQUARE)
             template_matching_data['h'].append(CONFIG.SQUARE)
             template_matching_data['score'].append(pt[4])
