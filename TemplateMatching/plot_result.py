@@ -10,9 +10,9 @@ from utils import CONFIG, parseDate
 def dataToCSV():
 
     data = folder_search() #sorted
-    maxCenterIndex = 0
-    maxLength = 0
-    centerIndecies = []
+    max_center_index = 0
+    max_length = 0
+    center_indecies = []
     dates = []
 
     for i in range(len(data)):
@@ -23,26 +23,26 @@ def dataToCSV():
         dates.append(date)
 
         # find center index
-        centerTooth = df.index[df["type"] == "Tooth.CENTER_T"].to_numpy()
-        if len(centerTooth) == 0:
-            centerIndex = df.index[df["type"] == "Tooth.CENTER_G"].to_numpy()[0]
+        center_tooth = df.index[df["type"] == "Tooth.CENTER_T"].to_numpy()
+        if len(center_tooth) == 0:
+            center_index = df.index[df["type"] == "Tooth.CENTER_G"].to_numpy()[0]
         else: 
-            centerIndex = centerTooth[0]
-        centerIndecies.append(centerIndex)
+            center_index = center_tooth[0]
+        center_indecies.append(center_index)
         
         # update max length, update max center index
-        if centerIndex > maxCenterIndex:
-            maxCenterIndex = centerIndex
-        if len(df) > maxLength:
-            maxLength = len(df)
+        if center_index > max_center_index:
+            max_center_index = center_index
+        if len(df) > max_length:
+            max_length = len(df)
 
     # set dataframe shape (1 column for date + the rest for teeth indecies)
-    columns = range(maxCenterIndex + maxLength - 1) - maxCenterIndex
+    columns = range(max_center_index + max_length - 1) - max_center_index
     columns = [str(column) for column in columns]
-    dfOutputArclength = pd.DataFrame(columns=["date"]+columns)
-    dfOutputBinary = pd.DataFrame(columns=["date"]+columns)
+    df_output_arclength = pd.DataFrame(columns=["date"]+columns)
+    df_output_binary = pd.DataFrame(columns=["date"]+columns)
 
-    entrySoFar = 0
+    entry_so_far = 0
     for i in range(len(dates)):
         # read data
         df = pd.read_csv(data[i])
@@ -50,25 +50,26 @@ def dataToCSV():
         types = df["type"]
         
         #arclength representation = x values of projection; binary data representation = 1 for teeth, 0 for gap
-        arclengthDataRep = x - df["x"][centerIndecies[i]]
-        binaryDataRep = [1 if (types[i] == "Tooth.TOOTH" or types[i] == "Tooth.CENTER_T") else 0 for i in range(len(x))]
+        arclength_data_rep = x - df["x"][center_indecies[i]]
+        binary_data_rep = [1 if (types[i] == "Tooth.TOOTH" or types[i] == "Tooth.CENTER_T"
+                                or types[i] == "Tooth.ERROR_T") else 0 for i in range(len(x))]
 
         # add front and back padding to obtain the correct shape to insert into dataframe
-        arclengthDataRepPad = padding(arclengthDataRep, centerIndecies[i], maxCenterIndex, len(columns))
-        binaryDataRepPad = padding(binaryDataRep, centerIndecies[i], maxCenterIndex, len(columns))
+        arclength_data_rep_pad = padding(arclength_data_rep, center_indecies[i], max_center_index, len(columns))
+        binary_data_rep_pad = padding(binary_data_rep, center_indecies[i], max_center_index, len(columns))
 
         # prepend date into the "date" column
-        dfEntryArclength = [dates[i]] + arclengthDataRepPad
-        dfEntryBinary = [dates[i]] + binaryDataRepPad
+        df_entry_arclength = [dates[i]] + arclength_data_rep_pad
+        df_entry_binary = [dates[i]] + binary_data_rep_pad
 
         # set the maxlength'th entry to be the new entry; aka add new entry
-        dfOutputArclength.loc[entrySoFar] = dfEntryArclength
-        dfOutputBinary.loc[entrySoFar] = dfEntryBinary
-        entrySoFar += 1
+        df_output_arclength.loc[entry_so_far] = df_entry_arclength
+        df_output_binary.loc[entry_so_far] = df_entry_binary
+        entry_so_far += 1
 
     # save to output folder
-    dfOutputBinary.to_csv(os.path.join("processed", "output", "binary data.csv"))
-    dfOutputArclength.to_csv(os.path.join("processed", "output", "arclength data.csv"))
+    df_output_binary.to_csv(os.path.join("processed", "output", "binary data.csv"))
+    df_output_arclength.to_csv(os.path.join("processed", "output", "arclength data.csv"))
 
     plotResult()
 

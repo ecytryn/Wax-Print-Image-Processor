@@ -86,8 +86,8 @@ def templateMatching(fileName, imgName, fileType, mode, templates):
         cv2.rectangle(img, (pt[0], pt[1]), (pt[0] + pt[2], pt[1] + pt[3]), (255,255,0), 2)
         csv_data['x'].append(pt[0])
         csv_data['y'].append(pt[1])
-        csv_data['w'].append(pt[2])
-        csv_data['h'].append(pt[3])
+        csv_data['w'].append(CONFIG.SQUARE)
+        csv_data['h'].append(CONFIG.SQUARE)
         csv_data['score'].append(pt[4])
         csv_data['match'].append(pt[5])
     df = pd.DataFrame(data=csv_data)
@@ -95,18 +95,18 @@ def templateMatching(fileName, imgName, fileType, mode, templates):
 
 
     # saving
-    currDir = os.getcwd()
+    curr_dir = os.getcwd()
 
     if mode == Match.ONE_D:
-        os.chdir(os.path.join(currDir, "processed","template matching",imgName))
+        os.chdir(os.path.join(curr_dir, "processed","template matching",imgName))
         df.to_csv("template matching 1D.csv")
         cv2.imwrite(f"template matching 1D{fileType}", img)
     else:
-        os.chdir(os.path.join(currDir, "processed","template matching",imgName))
+        os.chdir(os.path.join(curr_dir, "processed","template matching",imgName))
         df.to_csv("template matching.csv")
         cv2.imwrite(f"template matching{fileType}", img)
 
-    os.chdir(currDir)
+    os.chdir(curr_dir)
 
 
 

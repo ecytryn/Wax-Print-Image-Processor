@@ -59,13 +59,13 @@ if __name__ == "__main__":
     manual_bool = False
     fitproj_bool = False
     format_bool = False
-    if "match" or "all" in args:
+    if "match" in args or "all" in args:
         match_bool = True
-    if "manual" or "all" in args:
+    if "manual" in args or "all" in args:
         manual_bool = True
-    if "fitproj" or "all" in args:
+    if "fitproj" in args or "all" in args:
         fitproj_bool = True
-    if "format" or "all" in args:
+    if "format" in args or "all" in args:
         format_bool = True
     
 
@@ -74,12 +74,12 @@ if __name__ == "__main__":
     num_of_images = len(images)
 
 
-    if "-start" in args or "-n" in args:
+    if "-s" in args or "-n" in args:
         start_index = 0
         num_to_process = num_of_images - start_index
 
-        if "-start" in args:
-            start_index = flag_to_integer(args, "-start")
+        if "-s" in args:
+            start_index = flag_to_integer(args, "-s")
         if "-n" in args:
             num_to_process = flag_to_integer(args, "-n")
 
@@ -88,8 +88,8 @@ if __name__ == "__main__":
         if len(images) == 0:
             raise RuntimeError(f"Empty list detected: either starting index {start_index} is out of bounds (min = 0, max = {num_of_images-1}) or flag -n < 1")
         else:
-            print(f"Processing images {start_index} to {min(start_index+num_to_process,num_of_images)}: '{images[0]}' to '{images[-1]}'")
-    elif len(args) > 0:
+            print(f"Processing images indexed {start_index} to {min(start_index+num_to_process-1,num_of_images-1)} (index starts at 0): '{images[0]}' to '{images[-1]}'")
+    elif len(args) > 1:
         images = sorted([arg for arg in args if os.path.isfile(os.path.join("img", arg))])
         print(f"Processing images {images}")
     else:

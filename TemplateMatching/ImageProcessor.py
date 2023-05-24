@@ -13,25 +13,25 @@ import noise_filtering
 import hyperbola_solve
 import GUI
 import plot_result
-from utils import Match, CONFIG, Filter, makeDir, suffix, endProcedure
+from utils import Match, CONFIG, Filter, make_dir, suffix, end_procedure
 
 
 class ImageProcessor:
     '''
     This class helps organize all the methods and data surrounding an image. 
     '''
-    def __init__(self, fileName: str):
+    def __init__(self, file_name: str):
         '''
         Initialization
         '''
         self.root = os.getcwd()
 
-        self.fileType = os.path.splitext(fileName)[1]
-        self.fileName = fileName
-        self.imgName = fileName.replace(self.fileType, "")
+        self.file_type = os.path.splitext(file_name)[1]
+        self.file_name = file_name
+        self.img_name = file_name.replace(self.file_type, "")
 
-        assert os.path.isfile(os.path.join(os.getcwd(),'img', self.fileName)), f"'{self.fileName}' does not exist in img"
-        self.image = cv2.imread(os.path.join('img', fileName), cv2.IMREAD_GRAYSCALE)
+        assert os.path.isfile(os.path.join(os.getcwd(),'img', self.file_name)), f"'{self.file_name}' does not exist in img"
+        self.image = cv2.imread(os.path.join('img', file_name), cv2.IMREAD_GRAYSCALE)
         self.height = self.image.shape[0]
         self.width = self.image.shape[1]
 
@@ -42,11 +42,11 @@ class ImageProcessor:
         if Match.ONE_D, matches "template 1D" images to projected image
         if Match.TWO_D, matches "template" images to original image
         '''
-        startTime = time.time()
+        start_time = time.time()
 
-        targetPath = os.path.join(self.root, "processed", "template matching")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "template matching")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
         if mode == Match.TWO_D:
@@ -54,14 +54,14 @@ class ImageProcessor:
         elif mode == Match.ONE_D:
             templates = [file for file in os.listdir(os.path.join(os.getcwd(),"template 1D")) if suffix(file) in CONFIG.FILE_TYPES]
         try:
-            template_matching.templateMatching(self.fileName, self.imgName, self.fileType, mode, templates)
+            template_matching.templateMatching(self.file_name, self.img_name, self.file_type, mode, templates)
         except RuntimeError as err:
             print(err)
         if displayTime and mode == Match.TWO_D:
-            print(f"MATCH       | '{self.fileName}: {time.time()-startTime} s")
+            print(f"MATCH       | '{self.file_name}: {time.time()-start_time} s")
         if displayTime and mode == Match.ONE_D:
-            print(f"MATCH 1D    | '{self.fileName}': {time.time()-startTime} s")
-        endProcedure()  
+            print(f"MATCH 1D    | '{self.file_name}': {time.time()-start_time} s")
+        end_procedure()  
 
 
     def filter(self, displayTime: bool = False):
@@ -69,23 +69,23 @@ class ImageProcessor:
         Filter current image's data according to CONFIG.FILTER and thresholds. If it's Filter.Manual or Filter.None
         don't filter. Output result in "filter data" 
         '''
-        startTime = time.time()
+        start_time = time.time()
 
-        targetPath = os.path.join(self.root, "processed", "filter")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "filter")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
         if CONFIG.FILTER == Filter.MANUAL:
-            path = os.path.join('processed', "manual", self.imgName,f"manual data.csv")
-            assert os.path.isfile(path), f"'manual data.csv' does not exist in /processed/manual/{self.imgName} - did you run manual first?"
+            path = os.path.join('processed', "manual", self.img_name,f"manual data.csv")
+            assert os.path.isfile(path), f"'manual data.csv' does not exist in /processed/manual/{self.img_name} - did you run manual first?"
         else:
-            path = os.path.join('processed', "template matching", self.imgName,f"template matching.csv")
-            assert os.path.isfile(path), f"'template matching.csv' does not exist in /processed/template matching/{self.imgName} - did you run match first?"
-        noise_filtering.continuityFilter(self.imgName, self.fileType)
+            path = os.path.join('processed', "template matching", self.img_name,f"template matching.csv")
+            assert os.path.isfile(path), f"'template matching.csv' does not exist in /processed/template matching/{self.img_name} - did you run match first?"
+        noise_filtering.continuityFilter(self.img_name, self.file_type)
         if displayTime:
-            print(f"FILTER      | '{self.fileName}': {time.time()-startTime} s")
-        endProcedure()
+            print(f"FILTER      | '{self.file_name}': {time.time()-start_time} s")
+        end_procedure()
 
 
     def fitProject(self, displayTime: bool = False):
@@ -93,32 +93,32 @@ class ImageProcessor:
         takes data from "filter data" and project. If CONFIG.FILTER == Filter.MANUAL, also project manual data. 
         '''
 
-        targetPath = os.path.join(self.root, "processed", "fit")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "fit")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
-        targetPath = os.path.join(self.root, "processed", "projection")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "projection")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
-        targetPath = os.path.join(self.root, "processed", "manual")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "manual")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
-        startTime = time.time()
-        path = os.path.join('processed', "filter", self.imgName, "raw.csv")
-        assert os.path.isfile(path), f"filtered files do not exist in /processed/filter/{self.imgName} - did you run filter first?"
+        start_time = time.time()
+        path = os.path.join('processed', "filter", self.img_name, "raw.csv")
+        assert os.path.isfile(path), f"filtered files do not exist in /processed/filter/{self.img_name} - did you run filter first?"
         try:
-            hyperbola_solve.solve(self.fileName, self.imgName, self.fileType, self.height)
+            hyperbola_solve.solve(self.file_name, self.img_name, self.file_type, self.height)
         except RuntimeError as err:
             print(err)
 
         if displayTime:
-            print(f"FIT PROJECT | '{self.fileName}': {time.time()-startTime} s")
-        endProcedure()
+            print(f"FIT PROJECT | '{self.file_name}': {time.time()-start_time} s")
+        end_procedure()
 
 
     def manual(self, displayTime: bool = False, mode = Match.ONE_D):
@@ -127,20 +127,20 @@ class ImageProcessor:
         if Match.ONE_D, uses data from "manual 1D data" if exists, else uses data from "projection data"
         if Match.TWO_D, uses data from "manual data" if exists, else uses data from "match data"
         '''
-        startTime = time.time()
+        start_time = time.time()
 
-        targetPath = os.path.join(self.root, "processed", "manual")
-        os.chdir(targetPath)
-        makeDir(self.imgName)
+        target_path = os.path.join(self.root, "processed", "manual")
+        os.chdir(target_path)
+        make_dir(self.img_name)
         os.chdir(self.root)
 
         try:
-            GUI.GUI(self.fileName, self.imgName, self.fileType, mode)
+            GUI.GUI(self.file_name, self.img_name, self.file_type, mode)
         except RuntimeError as err:
             print(err)
         if displayTime:
-            print(f"MANUAL      | '{self.fileName}': {time.time()-startTime} s")
-        endProcedure()
+            print(f"MANUAL      | '{self.file_name}': {time.time()-start_time} s")
+        end_procedure()
 
 
     @staticmethod
@@ -148,14 +148,14 @@ class ImageProcessor:
         '''
         plot the result from "manual data 1D"
         '''
-        startTime = time.time()
+        start_time = time.time()
         try:
             plot_result.dataToCSV()
         except RuntimeError as err:
             print(err)
         if displayTime:
-            print(f"PLOT MANUAL | {time.time()-startTime} s")
-        endProcedure()
+            print(f"PLOT MANUAL | {time.time()-start_time} s")
+        end_procedure()
 
 
 # creates the folder structure
@@ -171,17 +171,17 @@ class ImageProcessor:
      -- manual 
 '''
 current = os.getcwd()
-makeDir("img")
-makeDir("template")
-makeDir("template 1D")
-makeDir("processed")
+make_dir("img")
+make_dir("template")
+make_dir("template 1D")
+make_dir("processed")
 os.chdir(os.path.join(current,"processed"))
-makeDir("filter")
-makeDir("fit")
-makeDir("template matching")
-makeDir("projection")
-makeDir("manual")
-makeDir("output")
+make_dir("filter")
+make_dir("fit")
+make_dir("template matching")
+make_dir("projection")
+make_dir("manual")
+make_dir("output")
 os.chdir(current)
 
 # suppresses warnings for a cleaner output (comment to unsuppress)

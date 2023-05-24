@@ -22,6 +22,8 @@ class Tooth(Enum):
     CENTER_T = 3
     CENTER_G = 4
     NO_BOX = 5
+    ERROR_T = 6
+    ERROR_G = 7
 
 @unique
 class Filter(Enum):
@@ -64,11 +66,16 @@ class CONFIG:
     SMOOTH_EVEN_THRESHOLD: float = 5
 
     "HYPERBOLA SOLVE"
+    #which filtering technique to choose (changes which file to take data from). See class Filter for options. 
+    FILTER: Filter = Filter.MANUAL
+
+    "ANALYZE PROJECTION"
     #for intensity analysis; each data point is the average over a window WINDOW_WIDTH wide
     WINDOW_WIDTH: int = 10
-    #which filtering technique to choose. See class Filter for options. 
-    FILTER: Filter = Filter.MANUAL
-    
+    ERROR_LOWER_B: int = 30
+    ERROR_UPPER_B: int = 60
+
+
     "CROSS PROD"
     # which cross product method to use
     CROSS_METHOD: Cross = Cross.SQAURED
@@ -92,9 +99,10 @@ class CONFIG:
 
     "OTHERS - STYLISTIC"
     #colors for manual editing; in format (G,B,R) not (R,G,B)!
-    CENTER: Tuple[int, int, int] = (255,255,0) #cyan
-    GAP: Tuple[int, int, int] = (0,255,255) #yellow
-    TOOTH: Tuple[int, int, int] = (0,0,255) #red
+    CENTER: Tuple[int, int, int] = (255, 255, 0) #cyan
+    GAP: Tuple[int, int, int] = (0, 255, 255) #yellow
+    TOOTH: Tuple[int, int, int] = (0, 0, 255) #red
+    ERROR: Tuple[int, int, int] = (0, 165, 255) #orange
     # plot style used by matplotlib
     PLOT_STYLE: str = "default"
     #matplotlib figure dimensions (used when output is too crammed)
@@ -107,7 +115,7 @@ class CONFIG:
 
 
 # general helper functions
-def makeDir(dir: str):
+def make_dir(dir: str):
     '''create a specified directory if it doesn't already exist'''
     if not os.path.isdir(dir):
         os.mkdir(dir)
@@ -116,7 +124,7 @@ def suffix(file: str):
     '''returns the suffix of a file'''
     return os.path.splitext(file)[1]
 
-def endProcedure():
+def end_procedure():
     '''closes all current matplotlib and cv2 windows'''
     plt.close("all")
     cv2.destroyAllWindows()

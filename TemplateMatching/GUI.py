@@ -116,6 +116,10 @@ class GUI:
                         self.type = np.append(self.type, Tooth.CENTER_T)
                     elif i == "Tooth.CENTER_G":
                         self.type = np.append(self.type, Tooth.CENTER_G)
+                    elif i == "Tooth.ERROR_T":
+                        self.type = np.append(self.type, Tooth.ERROR_T)
+                    elif i == "Tooth.ERROR_G":
+                        self.type = np.append(self.type, Tooth.ERROR_G)
 
         # reads image, set up mouse callback
         image = cv2.imread(img_path)
@@ -233,6 +237,12 @@ class GUI:
             labelled_img = GUI._draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "T")
         elif type == Tooth.CENTER_G:
             color = CONFIG.CENTER
+            labelled_img = GUI._draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "G")
+        elif type == Tooth.ERROR_T:
+            color = CONFIG.ERROR
+            labelled_img = GUI._draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "T")
+        elif type == Tooth.ERROR_G:
+            color = CONFIG.ERROR
             labelled_img = GUI._draw_label(image, center_x+OFFSET_X, center_y+OFFSET_Y, color, "G")
 
         labelled_img = GUI._draw_center(image, center_x, center_y, color)
@@ -434,12 +444,21 @@ def plot_previous_data(file_name: str, img_name: str, file_type: str, mode: Matc
             type = np.append(type, Tooth.CENTER_T)
         elif i == "Tooth.CENTER_G":
             type = np.append(type, Tooth.CENTER_G)
+        elif i == "Tooth.ERROR_T":
+            type = np.append(type, Tooth.ERROR_T)
+        elif i == "Tooth.ERROR_G":
+            type = np.append(type, Tooth.ERROR_G)
 
     if not os.path.isfile(img_path):
         raise RuntimeError(f"{img_path} does not exist. A hyperbola fit was likely not found or did you run fitProject first?")
 
     image = cv2.imread(img_path)
-    for i in range(len(x)):
-        image = GUI.draw_tooth(image, int(x[i]-1/2*w[i]), int(y[i]-1/2*h[i]), w[i], h[i], type[i])
+    
+    if mode == Match.ONE_D:
+        for i in range(len(x)):
+            image = GUI.draw_tooth(image, int(x[i]-1/2*w[i]), int(y[i]-1/2*h[i]), w[i], h[i], type[i])
+    else:
+        for i in range(len(x)):
+            image = GUI.draw_tooth(image, int(x[i]), int(y[i]), w[i], h[i], type[i])
 
     GUI.save(file_name, img_name, file_type, mode, image, df)
