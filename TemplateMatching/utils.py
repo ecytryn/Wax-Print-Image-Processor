@@ -129,12 +129,12 @@ def end_procedure():
     plt.close("all")
     cv2.destroyAllWindows()
 
-def printDivider():
+def print_divider():
     '''prints a divider into the console'''
     print("============================================================")
 
 
-def parseDate(fileName):
+def parse_date(fileName):
     '''parses the date from the name of an image (assumes format MM_DD_YEAR...)'''
     try:
         year = int(fileName[6:10])

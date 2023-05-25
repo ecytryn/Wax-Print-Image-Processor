@@ -5,6 +5,7 @@ import sys
 # modules
 from ImageProcessor import ImageProcessor
 from utils import Match, CONFIG, suffix
+from format_plot import format_result, plot_result
 
 
 
@@ -17,34 +18,42 @@ def workflowOne(images):
 
 def match(images):
     for image in images:
-        processImg = ImageProcessor(image)
-        processImg.template_matching(True, Match.TWO_D)
+        process_img = ImageProcessor(image)
+        process_img.template_matching(True, Match.TWO_D)
 
 def manual(images):
     for image in images:
-        processImg = ImageProcessor(image)
-        processImg.manual(True, Match.TWO_D)
+        process_img = ImageProcessor(image)
+        process_img.manual(True, Match.TWO_D)
 
 def fitproj(images):
     for image in images:
-        processImg = ImageProcessor(image)
-        processImg.filter(True)
-        processImg.fitProject(True)
+        process_img = ImageProcessor(image)
+        process_img.filter(True)
+        process_img.fitProject(True)
 
 def format():
-    ImageProcessor.plotResult(True)
+    format_result()
+    plot_result()
 
 
-def flag_to_integer(args: list[str], flag: str):
+def flag_to_integer(args: list[str], flag: str) -> int:
     """
+    Checks whether the value followed by a flag is an integer. If
+    yes, return the integer.
+
+    Param
+    -----
+    args: list of command line arguments
+    flag: flag after which to search for integer
     """
+    value = args[args.index(flag)+1]
     try:
-        value = args[args.index(flag)+1]
         index = int(value)
     except ValueError:
         raise ValueError(f"{value} is not an integer.")
     except IndexError:
-        raise IndexError(f"No integer followed by '-n'")
+        raise IndexError(f"No integer followed by {flag}")
 
     if index < 0:
         raise RuntimeError(f"Flag {flag} is non positive")
@@ -68,7 +77,6 @@ if __name__ == "__main__":
     if "format" in args:
         format_bool = True
     
-
     args = [arg for arg in args if (arg not in {"match", "manual", "fitproj", "format", "main.py"})]
     images = sorted([file for file in os.listdir(os.path.join(os.getcwd(),"img")) if suffix(file) in CONFIG.FILE_TYPES])
     num_of_images = len(images)

@@ -4,22 +4,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta
 
-from utils import CONFIG, parseDate
+from utils import CONFIG, parse_date
 
 
-def dataToCSV():
+def format_result() -> None:
+    """
+    Sorts all output file into the desired format. 
+    """
 
-    data = folder_search() #sorted
+    # finds path of all data files, sorted
+    data_paths = search_file(CONFIG.PATH, CONFIG.DATA_FILENAME)
     max_center_index = 0
     max_length = 0
     center_indecies = []
     dates = []
 
-    for i in range(len(data)):
-        # parse date
-        df = pd.read_csv(data[i])
-        subdirname = os.path.basename(os.path.dirname(data[i]))
-        date = parseDate(subdirname)
+    for i in range(len(data_paths)):
+        # read file
+        df = pd.read_csv(data_paths[i])
+        subdirname = os.path.basename(os.path.dirname(data_paths[i]))
+        date = parse_date(subdirname)
         dates.append(date)
 
         # find center index
@@ -45,7 +49,7 @@ def dataToCSV():
     entry_so_far = 0
     for i in range(len(dates)):
         # read data
-        df = pd.read_csv(data[i])
+        df = pd.read_csv(data_paths[i])
         x = df["x"].to_numpy()
         types = df["type"]
         
@@ -71,11 +75,12 @@ def dataToCSV():
     df_output_binary.to_csv(os.path.join("processed", "output", "binary data.csv"))
     df_output_arclength.to_csv(os.path.join("processed", "output", "arclength data.csv"))
 
-    plotResult()
 
 
-def plotResult():
-    """plot a representation of the output csv"""
+def plot_result() -> None:
+    """
+    Plot the formatted output data. 
+    """
 
     outputPath = os.path.join("processed", "output")
     dfArclength = pd.read_csv(os.path.join(outputPath, "arclength data.csv"))
@@ -181,31 +186,63 @@ def plotResult():
     binFig.savefig(os.path.join(outputPath,"index plot.png"))
 
 
-def folder_search():
-    '''
-    return all csvs within the "results" folder specified in CONFIG in sorted order by path
-    '''
-    root = CONFIG.PATH
-    allDir = [x[0] for x in os.walk(root)]
-    csv = []
+def search_file(root: str, file_name: str) -> list[str]:
+    """
+    Finds all instances of a file within the root folder.
+
+    Params
+    ------
+    root: path of root directory of search from
+    file_name: file name 
+
+    Returns
+    -------
+    A list of the full path of each instance of file_name.
+    """
+
+    # returns all directories and subdirectories in root
+    all_dir = [x[0] for x in os.walk(root)]
+    file_instances = []
     
-    for dir in allDir:
+    # iterates through all directories
+    for dir in all_dir:
         items = os.listdir(dir)
         for item in items:
-            if item == CONFIG.DATA_FILENAME:
-                csv.append(os.path.join(dir, item))
+            # if file name is what we're looking for, append full path
+            if item == file_name:
+                file_instances.append(os.path.join(dir, item))
     
-    return sorted(csv)
+    return sorted(file_instances)
 
 
-def padding(dataList, currentCenterIndex, targetCenterIndex, numOfColumns):
-    '''
-    Give dataList front padding to center its currentCenterIndex with the targetCenterIndex
-    and give dateList back padding to have the same number of items as numOfColumns
-    '''
-    frontPad = targetCenterIndex - currentCenterIndex
-    frontPadd = [None for _ in range(frontPad)]
-    frontPadded = frontPadd+list(dataList)
-    backPad = numOfColumns - len(frontPadded)
-    backPadd = [None for _ in range(backPad)]
-    return frontPadded+backPadd
+
+def padding(unpadded_list: list, curr_center_ind: int, target_center_ind: int, num_of_cols: int) -> list:
+    """
+    Pad unpadded_list so the center index is aligned with the target center
+    index. 
+
+    Params
+    ------
+    unpadded_list: list to be padded
+    curr_center_ind: current center index
+    target_center_ind: target center index
+    num_of_cols: number of columns of the panda dataframe to insert the result
+    list; the length needed for the padded list 
+
+    Returns
+    -------
+    unpadded_list with padding such that the center index is aligned with the
+    target index and the length is num_of_cols
+
+    Note: curr_center_ind is not necessarily the "center" of the list.
+    """
+
+    unpadded_list = list(unpadded_list)
+
+    front_pad_size = target_center_ind - curr_center_ind
+    front_padding = [None for _ in range(front_pad_size)]
+
+    back_pad_size = num_of_cols - len(front_padding) - len(unpadded_list)
+    back_padding = [None for _ in range(back_pad_size)]
+    
+    return front_padding + unpadded_list + back_padding
