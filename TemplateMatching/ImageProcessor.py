@@ -134,18 +134,15 @@ class ImageProcessor:
     #---------------------------------------------------------------------------------------------------
 
 
-    def template_matching(self, display_time: bool = False, mode: Match = Match.TWO_D) -> None:
+    def template_matching(self, display_time: bool = False) -> None:
         """
         Performs template matching and stores output in '/processed/template matching/[img_name]' 
 
-        If mode = Match.ONE_D, matches '/template 1D' images to projected image in 
-        '/processed/projection/[img_name]'. If Match.TWO_D, matches '/template' images 
-        to original image in '/img'. 
+        Matches '/template' images to original image in '/img'. 
         
         Params
         ------
         display_time: display log of time to run function
-        mode: one of Match.TWO_D or Match_ONE_D
 
         Notes
         -----
@@ -155,25 +152,15 @@ class ImageProcessor:
         """
 
         start_time = time.time()
-        
-        if (mode == Match.ONE_D) and (self.image_proj is None):
-            raise RuntimeError(f"projected image for {self.img_name} is not found; did you run fit project first?")
             
         # set up config thresholds, image data, template path
         # note that img is converted into grayscale for template matching
         
-        if mode == Match.TWO_D:
-            threshold = CONFIG.THRESHOLD
-            iou_threshold = CONFIG.IOU_THRESHOLD
-            templates = [file for file in os.listdir(self._PATH_TEMPLATE) if suffix(file) in CONFIG.FILE_TYPES]
-            img = cv2.cvtColor(self.image.copy(), cv2.COLOR_BGR2GRAY)
-            template_dir = self._PATH_TEMPLATE
-        elif mode == Match.ONE_D:
-            threshold = CONFIG.THRESHOLD_1D
-            iou_threshold = CONFIG.IOU_THRESHOLD_1D
-            templates = [file for file in os.listdir(self._PATH_TEMPLATE_1D) if suffix(file) in CONFIG.FILE_TYPES]
-            img = cv2.cvtColor(self.image_proj.copy(), cv2.COLOR_BGR2GRAY)
-            template_dir = self._PATH_TEMPLATE_1D
+        threshold = CONFIG.THRESHOLD
+        iou_threshold = CONFIG.IOU_THRESHOLD
+        templates = [file for file in os.listdir(self._PATH_TEMPLATE) if suffix(file) in CONFIG.FILE_TYPES]
+        img = cv2.cvtColor(self.image.copy(), cv2.COLOR_BGR2GRAY)
+        template_dir = self._PATH_TEMPLATE
 
         teeth = []
         for template_path in templates:
@@ -225,12 +212,8 @@ class ImageProcessor:
 
         # save data and matching image
         os.chdir(self._PATH_MATCHING)
-        if mode == Match.TWO_D:
-            df.to_csv("template matching.csv")
-            cv2.imwrite(f"template matching{self.file_type}", matched_image)
-        elif mode == Match.ONE_D:
-            df.to_csv("template matching 1D.csv")
-            cv2.imwrite(f"template matching 1D{self.file_type}", matched_image)
+        df.to_csv("template matching.csv")
+        cv2.imwrite(f"template matching{self.file_type}", matched_image)
         os.chdir(self._PATH_ROOT)
 
 
@@ -405,7 +388,7 @@ class ImageProcessor:
     #---------------------------------------------------------------------------------------------------
 
 
-    def manual(self, display_time: bool = False, mode: Match = Match.TWO_D):
+    def manual(self, display_time: bool = False):
         """
         Opens interface for manual editing (a GUI instance).
         """
@@ -621,7 +604,7 @@ class ImageProcessor:
                 type = np.append(type, Tooth.ERROR_G)
 
         for i in range(len(x)):
-                image = GUI.draw_tooth(image, int(x[i]), int(y[i]), w[i], h[i], type[i])
+            image = GUI.draw_tooth(image, int(x[i]), int(y[i]), w[i], h[i], type[i], Tooth.NO_BOX)
 
         GUI.save(self.file_name, self.img_name, self.file_type, mode, image, df)
 

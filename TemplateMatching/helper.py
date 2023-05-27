@@ -68,6 +68,16 @@ def suffix(file: str) -> str:
 
 def axis_symmetry(coeff: tuple[float, float, float, float, float]) -> np.array:
     """
+    Compute the axis of symmetry that divides a hyperbola
+
+    Params
+    ------
+    coeff: coefficients of hyperbola (A, B, C, D, E) for hyperbola having the 
+    equation Ax^2 + Bxy + Cy^2 + Dx + Ey - 1 = 0
+
+    Returns
+    -------
+    A vector parallel to the axis of symmetry 
     """
     (A,B,C,D,E) = coeff
     tan_twotheta = B/(A-C)
@@ -76,20 +86,33 @@ def axis_symmetry(coeff: tuple[float, float, float, float, float]) -> np.array:
     bisect_vector = np.array([np.tan(theta), -1])
     return bisect_vector
 
-def equidistant_set(start, end, coeff):
-    """
-    """
-    # equidistant in x
-    x = np.linspace(start, end, num=int(end-start)+1)
-    quadratic = coeff[2]*np.ones(len(x))
-    linear = coeff[1]*x+coeff[4]
-    constant = coeff[0]*x**2+coeff[3]*x-1
 
-    #conic: Ax**2+Bxy+Cy**2+Dx+Ey-1=0
-    #circle parameterization: x = prev_x + cos(t); y = prev_y + sin(t)
-    #intersection: plug
+def equidistant_set(start: float, end: float, 
+                    coeff: tuple[float, float, float, float, float]
+                    ) -> tuple[np.array, np.array]:
+    """
+    Compute the coordinates on a hyperbola at every unit distanced location of the
+    arclength from start to end.
 
-    start_root = [r for r in np.roots([quadratic[0], linear[0], constant[0]]) if r >= 0]
+    Params
+    ------
+    start: starting x
+    end: ending x
+    coeff: coefficients of hyperbola (A, B, C, D, E) for hyperbola having the 
+    equation Ax^2 + Bxy + Cy^2 + Dx + Ey - 1 = 0
+
+    Returns
+    -------
+    x, y coordinates of the equidistant data point
+    """
+    # points equidistant in x
+    (A, B, C, D, E) = coeff
+    quadratic_term = C
+    linear_term = B*start + E
+    constant_term = A*start**2 + D*start - 1
+
+    # find the starting y
+    start_root = [r for r in np.roots([quadratic_term, linear_term, constant_term]) if r >= 0]
     start_y = min(start_root)
 
     result = ([],[])
@@ -101,26 +124,40 @@ def equidistant_set(start, end, coeff):
         r2 = fsolve(_equidistant_set_func, -np.pi/4, [prev_x, prev_y, coeff])
 
         if np.cos(r1[0])>0:
-            currX, currY = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
+            curr_x, curr_y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
         elif np.cos(r2[0])>0:
-            currX, currY = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
+            curr_x, curr_y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
         else:
             curr1x, curr1y = prev_x+np.cos(r1[0]), prev_y+np.sin(r1[0])
             curr2x, curr2y = prev_x+np.cos(r2[0]), prev_y+np.sin(r2[0])
             if r1[0] < np.pi/2 and r1[0] > -np.pi/2:
                 raise RuntimeError(f"""Equidistant Points Error: r1x_0 = {prev_x}, r1y_0 = {prev_y}, r1x_1={curr1x}, r1x_2={curr1y}\n
                 r2x_0 = {prev_x}, r2y_0 = {prev_y}, r2x_1={curr2x}, r2x_2={curr2y}\n(A,B,C,D,E) = {coeff}\n Try readjusting some data through GUI""")
-        result[0].append(currX)
-        result[1].append(currY)
-        prev_x = currX
-        prev_y = currY
+        result[0].append(curr_x)
+        result[1].append(curr_y)
+        prev_x = curr_x
+        prev_y = curr_y
 
     return result
 
 
-def _equidistant_set_func(t, args) -> float:
+def _equidistant_set_func(t: float, 
+                          args: tuple[float, tuple[float, float, float, float, float]]
+                          ) -> float:
     """
-    Equation to solve for next equidistant step. 
+    Used to solve for the next unit distant point away from the previous point
+
+    Params
+    ------
+    t: guess for next unit distant point
+    args: [prev_x, prev_y, coeff] where
+        1. prev_x, prev_y = previus data point
+        2. coeff = coefficients of hyperbola
+
+    Returns
+    -------
+    Output when plugging t into the hyperbola equation. If the output is 0, it means that
+    t yields a point on the hyperbola. 
     """
     (prev_x, prev_y, coeff) = args
     (A,B,C,D,E) = coeff
@@ -131,7 +168,9 @@ def _equidistant_set_func(t, args) -> float:
             +D*(prev_x+np.cos(t))
             +E*(prev_y+np.sin(t))-1)
 
-def intersection_over_union(p1: list[int, int, int, int], p2: list[int, int, int, int]) -> float:
+def intersection_over_union(p1: list[int, int, int, int], 
+                            p2: list[int, int, int, int]
+                            ) -> float:
     """
     Computes the intersection area over the union area of two boxes ('intersection
     over union' score). Helper of template_matching. 
@@ -158,36 +197,70 @@ def intersection_over_union(p1: list[int, int, int, int], p2: list[int, int, int
     iou = inter_area / float(box1_area + box2_area - inter_area)
     return iou 
 
-def plot_hyperbola_linear(start, end, coeff) -> tuple[np.array, np.array]:
+def plot_hyperbola_linear(start: float, end: float, 
+                          coeff: tuple[float, float, float, float, float]) -> tuple[np.array, np.array]:
     """
+    Compute the coordinates on a hyperbola for every integer x from start to end.
+
+    Params
+    ------
+    start: starting x
+    end: ending x
+    coeff: coefficients of hyperbola (A, B, C, D, E) for hyperbola having the 
+    equation Ax^2 + Bxy + Cy^2 + Dx + Ey - 1 = 0
     """
-    # equidistant in x
+
+    (A, B, C, D, E) = coeff
     x = np.linspace(start, end, num=int(end-start)+1)
-    quadratic = coeff[2]*np.ones(len(x))
-    linear = coeff[1]*x+coeff[4]
-    constant = coeff[0]*x**2+coeff[3]*x-1
+    quadratic = C * np.ones(len(x))
+    linear = B*x + E
+    constant = A*x**2 + D*x - 1
     result = ([],[])
-    for i in range(len(x)):
-        roots = np.roots([quadratic[i], linear[i], constant[i]])
+
+    for coordinate_index in range(len(x)):
+        roots = np.roots([quadratic[coordinate_index], 
+                          linear[coordinate_index], 
+                          constant[coordinate_index]])
+        
         for r in roots:
             if r >= 0:
-                result[0].append(x[i])
+                result[0].append(x[coordinate_index])
                 result[1].append(r)
+
     return result
 
 
-def project_data_one(x, y, coeff):
+def project_data_one(x: float, y: float, 
+                     coeff: tuple[float, float, float, float, float]) -> tuple[float, float]:
     """
+    Compute the x coordinate of the shortest distance from a point to a hyperbola
+    with coeffcicients = coeff. Also compute the distance from the hyperbola at the 
+    closest point
+
+    Params
+    ------
+    x: x-coordinate of the point of projection 
+    y: y-coordinate of the point of projection 
+    coeff: coefficients of hyperbola (A, B, C, D, E) for hyperbola having the 
+    equation Ax^2 + Bxy + Cy^2 + Dx + Ey - 1 = 0
+
+    Returns
+    -------
+    1. arclength position of the point on the hyperbola closests to data point
+    2. distance from data point to the closest point on the hyperbola
     """
-    (A,B,C,D,E) = coeff
+    (A, B, C, D, E) = coeff
     solved = fsolve(_project_data_func, x, [x, y, coeff])
     hyperbola_x = solved[0]
+
     assert len(solved) == 1, f"More than one solution found for closest point to the hyperbola form {x,y}, {solved}, {coeff}"
+
     discrim = ((B*hyperbola_x+E)**2
             -4*C*(A*hyperbola_x**2
             +D*hyperbola_x-1))
     hyperbola_y = ((-B*hyperbola_x-E+np.sqrt(discrim))
                     /(2*C))
+    
     distance = np.sqrt((x-hyperbola_x)**2
                         +(y-hyperbola_y)**2)
 
@@ -198,25 +271,62 @@ def project_data_one(x, y, coeff):
 
     
 
-def _project_data_func(t, args):
+def _project_data_func(t: float, 
+                       args: tuple[float, float, tuple[float, float, float, float, float]]
+                       ) -> float:
     """
+    Used for the coordinate t that gives the closest distance to point x y
+
+    Params
+    ------
+    t: guess for closests point on the hyperbola to x, y
+    args: [x, y, coeff] where
+        1. x, y = data point to be projected
+        2. coeff = coefficients of hyperbola
+
+    Return
+    ------
+    dot product of the vector from x, y to the hyperbola at x = t and the tangent 
+    vector of the hyperbola at x = t
     """
     (x, y, coeff) = args
-    (A,B,C,D,E) = coeff
-    discrim = (B*t+E)**2-4*C*(A*t**2+D*t-1)
-    tangent = (1, 1/(2*C)*(-B+((2*B*(B*t+E))-4*C*(2*A*t+D))/(2*np.sqrt(discrim))))
-    normal = (t-x, ((-B*t-E+np.sqrt(discrim))/(2*C))-y)
-    return tangent[0]*normal[0]+tangent[1]*normal[1]
+    (A, B, C, D, E) = coeff
+    discrim = ((B *t + E)**2
+               -4*C * (A *t**2 + D *t -1))
+    tangent = (1, (1/(2*C) * 
+                   (-B + ((2*B * (B *t + E)) -4*C * (2*A *t + D))/(2 * np.sqrt(discrim)))))
+    normal = (t - x, ((-B *t - E + np.sqrt(discrim))/(2*C)) - y)
+    return tangent[0]*normal[0] + tangent[1]*normal[1]
 
-def project_arclength(x, y, coeff) -> tuple[np.array, np.array, float, tuple[float, float], tuple[float, float]]:
+def project_arclength(x: float, y: float, 
+                      coeff: tuple[float, float, float, float, float]
+                      ) -> tuple[np.array, np.array, float, tuple[float, float], tuple[float, float]]:
     """
+    Compute the coordinates of a strip of 2*CONFIG.SAMPLING_WIDTH pixels in 
+    the normal directions of the hyperbola. 
+
+    Params
+    ------
+    x: x-coordinate of the point of projection 
+    y: y-coordinate of the point of projection 
+    coeff: coefficients of hyperbola (A, B, C, D, E) for hyperbola having the 
+    equation Ax^2 + Bxy + Cy^2 + Dx + Ey - 1 = 0
+
+    Returns
+    -------
+    1. x- and y-coordinates of the sampled strip
+    2. orthonormal vector (outer?) at the point of projection (x, y)
+    3. tangent vector at the point of projection (x, y)
     """
     (A, B, C, D, E) = coeff
     
-    discrim = (B*x+E)**2-4*C*(A*x**2+D*x-1)
-    tangent = (1, 1/(2*C)*(-B+((2*B*(B*x+E))-4*C*(2*A*x+D))/(2*np.sqrt(discrim))))
+    discrim = ((B *x + E)**2
+               -4*C * (A *x**2 + D *x -1))
+    tangent = (1, (1/(2*C) * 
+                   (-B + ((2*B * (B *x + E)) -4*C * (2*A *x + D))/(2 * np.sqrt(discrim)))))
     normal = (1, -1/(tangent[1]))
-    normal_h = (normal[0]/np.sqrt((normal[0])**2+(normal[1])**2), normal[1]/np.sqrt((normal[0])**2+(normal[1])**2))
+    normal_h = (normal[0]/np.sqrt((normal[0])**2+(normal[1])**2), 
+                normal[1]/np.sqrt((normal[0])**2+(normal[1])**2))
 
     normal_x = []
     normal_y = []

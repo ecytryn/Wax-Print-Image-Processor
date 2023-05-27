@@ -106,18 +106,18 @@ class GUI:
                         self.type = np.append(self.type, Tooth.ERROR_G)
 
         # reads image, set up mouse callback
-        image = cv2.imread(img_path)
+        self.image = cv2.imread(img_path)
         cv2.namedWindow(img_name)
         cv2.setMouseCallback(img_name, self.left_click)
         self.mode_index = 0
 
 
-        self.ratio = 1 if CONFIG.MAX_WIDTH is None else CONFIG.MAX_WIDTH / image.shape[1]
+        self.ratio = 1 if CONFIG.MAX_WIDTH is None else CONFIG.MAX_WIDTH / self.image.shape[1]
 
         while True:
 
             # makes a copy of the original image 
-            self.clone = image.copy()
+            self.clone = self.image.copy()
             dataset_size = len(self.x)
 
             # draw data
@@ -144,7 +144,7 @@ class GUI:
 
             # resize window size
             if CONFIG.MAX_WIDTH is not None:
-                dimension = (CONFIG.MAX_WIDTH, int(image.shape[0] * self.ratio))
+                dimension = (CONFIG.MAX_WIDTH, int(self.image.shape[0] * self.ratio))
                 resized = cv2.resize(text_img, dimension, interpolation=cv2.INTER_AREA)
                 cv2.imshow(img_name, resized)
             else: 
@@ -177,6 +177,7 @@ class GUI:
             self.mode_index = (self.mode_index + 1) % len(self.MODES)
             self._curr_mode = self.MODES[self.mode_index]
         elif key == ord("s"): # s
+            # create dataframe to save
             df_res = pd.DataFrame()
             df_res["x"] = self.x
             df_res["y"] = self.y
@@ -184,8 +185,18 @@ class GUI:
             df_res["h"] = self.h
             df_res["type"] = self.type
             df_res.sort_values(by=["x"], inplace=True)
-
-            GUI.save(self.file_name, self.img_name, self.file_type, Match.TWO_D, self.clone, df_res)
+            # redraw data without boxes
+            dataset_size = len(self.x)
+            for i in range(dataset_size):
+                self.image = GUI.draw_tooth(self.image, 
+                                            self.x[i], 
+                                            self.y[i], 
+                                            self.w[i], 
+                                            self.h[i], 
+                                            self.type[i], 
+                                            Tooth.NO_BOX)
+                
+            GUI.save(self.file_name, self.img_name, self.file_type, Match.TWO_D, self.image, df_res)
             return True
         elif key == ord("1"): # 1
             self._curr_mode = Tooth.TOOTH

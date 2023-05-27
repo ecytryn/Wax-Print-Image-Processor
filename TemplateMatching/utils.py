@@ -42,58 +42,38 @@ class Cross(Enum):
 # settings/configurations of the program
 @dataclass(frozen=True)
 class CONFIG:
+
     "TEMPLATE MATCHING"
-    #minimum score to be considered a tooth
-    THRESHOLD: float = 0.75
-    THRESHOLD_1D: float = 0.75
-    #permited overlap to identify two "teeth" as distinct
-    IOU_THRESHOLD: float = 0.05
-    IOU_THRESHOLD_1D: float = 0.05   
-    #methods to use for template matching; https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html for a list of methods
-    METHODS = [cv2.TM_CCOEFF_NORMED] 
-
+    THRESHOLD: float = 0.75 # minimum score to be considered a tooth
+    IOU_THRESHOLD: float = 0.05 # permited overlap to identify two "teeth" as distinct
+    METHODS = [cv2.TM_CCOEFF_NORMED] #methods to use for template matching; https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html for a list of methods
     "NOISE FILTERING"
-    #threshold for gradient filtering
-    GRAD_THRESHOLD: float = 5
-    #threshold for gradient filtering (assuming teeth are equally spaced)
-    GRAD_EVEN_THRESHOLD: float = 50
-    #threshold for smoothness filtering
-    SMOOTH_THRESHOLD: float = 0.5
-    #threshold for smoothness filtering (assuming teeth are equally spaced)
-    SMOOTH_EVEN_THRESHOLD: float = 5
-
+    GRAD_THRESHOLD: float = 5 # threshold for gradient filtering
+    GRAD_EVEN_THRESHOLD: float = 50 # threshold for gradient filtering (assuming teeth are equally spaced)
+    SMOOTH_THRESHOLD: float = 0.5 # threshold for smoothness filtering
+    SMOOTH_EVEN_THRESHOLD: float = 5 # threshold for smoothness filtering (assuming teeth are equally spaced)
     "HYPERBOLA SOLVE"
-    #which filtering technique to choose (changes which file to take data from). See class Filter for options. 
-    FILTER: Filter = Filter.MANUAL
-
+    FILTER: Filter = Filter.MANUAL # which filtering technique to choose (changes which file to take data from). See class Filter for options. 
     "ANALYZE PROJECTION"
-    #for intensity analysis; each data point is the average over a window WINDOW_WIDTH wide
-    WINDOW_WIDTH: int = 10
-    ERROR_LOWER_B: int = 30
-    ERROR_UPPER_B: int = 60
-
-
+    WINDOW_WIDTH: int = 10 # for intensity analysis; each data point is the average over a window WINDOW_WIDTH wide
+    ERROR_LOWER_B: int = 30 # lower distance bound for potential error
+    ERROR_UPPER_B: int = 60 # upper distance bound for potential error
     "CROSS PROD"
-    # which cross product method to use
-    CROSS_METHOD: Cross = Cross.SQAURED
-    # how many pairs of teeth around the current tooth to cross
-    CROSS: int = 3
-
+    CROSS_METHOD: Cross = Cross.SQAURED # which sums method to use
+    CROSS: int = 3 # how many pairs of teeth around the current tooth to cross
     "PROJECT 1D"
-    # how far away to sample from hyperbola for projection
-    SAMPLING_WIDTH: int = 100
+    SAMPLING_WIDTH: int = 100 # how far away to sample from hyperbola for projection
+
 
     "GUI"
-    # side length of default manual squares
-    SQUARE: int = 30
-    MAX_WIDTH: int | None = None # shouldn't be large than image width
+    SQUARE: int = 30  # side length of default GUI squares
+    MAX_WIDTH: int | None = None # max width of window; shouldn't be large than image width
 
-    "PLOT_MANUAL"
-    # how much "time" elapsed between each image
-    TIME = 2
-    # PATH to plot results from; this folder will be seen to contain the result data
-    PATH = os.path.join(os.getcwd(),"processed", "manual")
-    DATA_FILENAME = "manual data 1D.csv"
+
+    "FORMAT_PLOT"
+    RESULT_PATH = os.path.join(os.getcwd(),"processed", "manual") # path to plot results from; this folder will be seen to contain the result data
+    DATA_FILENAME = "manual data 1D.csv" # file name of data (will be multiple named this within the output path)
+
 
     "OTHERS - STYLISTIC"
     #colors for manual editing; in format (G,B,R) not (R,G,B)!
@@ -101,13 +81,10 @@ class CONFIG:
     GAP: tuple[int, int, int] = (0, 255, 255) #yellow
     TOOTH: tuple[int, int, int] = (0, 0, 255) #red
     ERROR: tuple[int, int, int] = (0, 165, 255) #orange
-    # plot style used by matplotlib
-    PLOT_STYLE: str = "default"
+    PLOT_STYLE: str = "default" # plot style used by matplotlib
     #matplotlib figure dimensions (used when output is too crammed)
     WIDTH_SIZE: int = 15
     HEIGHT_SIZE: int = 7
-
     "OTHERS - INITIALIZATION"
-    # accepted filetypes for templates and images
-    FILE_TYPES = [".jpg", ".png", ".jpeg"]
+    FILE_TYPES = [".jpg", ".png", ".jpeg"] # accepted filetypes for templates and images
     

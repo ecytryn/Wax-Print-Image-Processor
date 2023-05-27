@@ -26,7 +26,7 @@ def workflow_one(images: list[str]) -> None:
     match(images)
     manual(images)
     fitproj(images)
-    format()
+    analyze_result()
         
     
 
@@ -34,14 +34,13 @@ def match(images: list[str]):
     """
     Performs template matching on images
 
-
     Params
     ------
     images: list of paths for images to processes
     """
     for image in images:
         process_img = ImageProcessor(image)
-        process_img.template_matching(True, Match.TWO_D)
+        process_img.template_matching(True)
 
 
 def manual(images: list[str]):
@@ -54,7 +53,7 @@ def manual(images: list[str]):
     """
     for image in images:
         process_img = ImageProcessor(image)
-        process_img.manual(True, Match.TWO_D)
+        process_img.manual(True)
 
 
 def fitproj(images: list[str]):
@@ -86,10 +85,9 @@ def analyze() -> None:
     analyze_result()
 
 
+
+
 #-----------------------------------------------------------
-
-
-
 if __name__ == "__main__":
 
     # obtains arguments

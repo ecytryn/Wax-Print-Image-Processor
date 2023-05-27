@@ -16,21 +16,20 @@ ALL_DATES = []
 FILE_NAMES = []
 
 
-
 def format_result() -> None:
     """
-    Format output files into the desired format. 
+    Format output data into the desired format. 
     """
 
     # finds path of all data files, sorted
-    data_paths = search_file(CONFIG.PATH, CONFIG.DATA_FILENAME)
+    data_paths = search_file(CONFIG.RESULT_PATH, CONFIG.DATA_FILENAME)
     max_center_index = 0
     max_length = 0
     center_indecies = []
     dates = []
 
     for i in range(len(data_paths)):
-        # read file
+        # read file, append date 
         df = pd.read_csv(data_paths[i])
         subdirname = os.path.basename(os.path.dirname(data_paths[i]))
         date = parse_date(subdirname)
@@ -44,17 +43,17 @@ def format_result() -> None:
             center_index = center_tooth[0]
         center_indecies.append(center_index)
         
-        # update max length, update max center index
+        # update max length, update max center index if applicable
         if center_index > max_center_index:
             max_center_index = center_index
         if len(df) > max_length:
             max_length = len(df)
 
     # set dataframe shape (1 column for date + the rest for teeth indecies)
-    columns = range(max_center_index + max_length - 1) - max_center_index
-    columns = [str(column) for column in columns]
-    df_output_arclength = pd.DataFrame(columns=["date"]+columns)
-    df_output_binary = pd.DataFrame(columns=["date"]+columns)
+    column_ids = range(max_center_index + max_length - 1) - max_center_index
+    columns_names = [str(column_id) for column_id in column_ids]
+    df_output_arclength = pd.DataFrame(columns=["date"]+columns_names)
+    df_output_binary = pd.DataFrame(columns=["date"]+columns_names)
 
     entry_so_far = 0
     for i in range(len(dates)):
@@ -63,20 +62,21 @@ def format_result() -> None:
         x = df["x"].to_numpy()
         types = df["type"]
         
-        #arclength representation = x values of projection; binary data representation = 1 for teeth, 0 for gap
+        # arclength representation = x values of projection
         arclength_data_rep = x - df["x"][center_indecies[i]]
+        # binary data representation = 1 for teeth, 0 for gap
         binary_data_rep = [1 if (types[i] == "Tooth.TOOTH" or types[i] == "Tooth.CENTER_T"
                                 or types[i] == "Tooth.ERROR_T") else 0 for i in range(len(x))]
 
         # add front and back padding to obtain the correct shape to insert into dataframe
-        arclength_data_rep_pad = padding(arclength_data_rep, center_indecies[i], max_center_index, len(columns))
-        binary_data_rep_pad = padding(binary_data_rep, center_indecies[i], max_center_index, len(columns))
+        arclength_data_rep_pad = padding(arclength_data_rep, center_indecies[i], max_center_index, len(columns_names))
+        binary_data_rep_pad = padding(binary_data_rep, center_indecies[i], max_center_index, len(columns_names))
 
         # prepend date into the "date" column
         df_entry_arclength = [dates[i]] + arclength_data_rep_pad
         df_entry_binary = [dates[i]] + binary_data_rep_pad
 
-        # set the maxlength'th entry to be the new entry; aka add new entry
+        # aka add new entry into dataframe
         df_output_arclength.loc[entry_so_far] = df_entry_arclength
         df_output_binary.loc[entry_so_far] = df_entry_binary
         entry_so_far += 1
@@ -89,68 +89,56 @@ def format_result() -> None:
 
 def plot_result() -> None:
     """
-    Plot the formatted output data. 
-
-    Requires
-    --------
-    format_result be ran first
+    Plot the formatted output data and save it
     """
 
     output_path = os.path.join("processed", "output")
-    df_arclength = pd.read_csv(os.path.join(output_path, "arclength data.csv"))
-    dfBinary = pd.read_csv(os.path.join(output_path, "binary data.csv"))
+    try:
+        df_arclength = pd.read_csv(os.path.join(output_path, "arclength data.csv"))
+        df_binary = pd.read_csv(os.path.join(output_path, "binary data.csv"))
+    except:
+        raise RuntimeError(f"Formatted output data do not exist in /processed/output. Did you run format_result?")
 
-    arcTooth = []
-    arcGap = []
-    arcCenterT = []
-    arcCenterG = []
-
-    binTooth = []
-    binGap = []
-    binCenterT = []
-    binCenterG = []
-
-    toothY = []
-    gapY = []
-    centerTY = []
-    centerGY = []
+    arc_tooth, arc_gap, arc_center_t, arc_center_g = [], [], [], []
+    bin_tooth, bin_gap, bin_center_t, bin_center_g = [], [], [], []
+    tooth_y, gap_y, center_t_y, center_g_y = [], [], [], []
 
     # convert string into dates
-    dates = sorted([datetime.strptime(d, '%Y-%m-%d') for d in df_arclength["date"]])
+    dates = [datetime.strptime(d, '%Y-%m-%d') for d in df_arclength["date"]]
     # first two columns are: 1) index of df, 2) date
-    indexColumns = df_arclength.columns.to_list()[2:] 
+    index_columns = df_arclength.columns.to_list()[2:] 
 
-    for entryIndex in range(len(dates)):
-        for columnIndex in indexColumns:
-            arcEntry = df_arclength[columnIndex][entryIndex]
-            binEntry = dfBinary[columnIndex][entryIndex]
+    for entry_index in range(len(dates)):
+        for column_index in index_columns:
+            arc_entry = df_arclength[column_index][entry_index]
+            bin_entry = df_binary[column_index][entry_index]
 
             # if not empty
-            if not pd.isna(binEntry):
+            if not pd.isna(bin_entry):
                 # if a tooth
-                if int(binEntry) == 1:
+                if int(bin_entry) == 1:
                     # if column is the centerindex
-                    if int(columnIndex) == 0:
-                        arcCenterT.append(float(arcEntry))
-                        binCenterT.append(float(columnIndex))
-                        centerTY.append(dates[entryIndex]) 
+                    if int(column_index) == 0:
+                        arc_center_t.append(float(arc_entry))
+                        bin_center_t.append(float(column_index))
+                        center_t_y.append(dates[entry_index]) 
                     # if not a centertooth
                     else:
-                        arcTooth.append(float(arcEntry))
-                        binTooth.append(float(columnIndex))
-                        toothY.append(dates[entryIndex])
+                        arc_tooth.append(float(arc_entry))
+                        bin_tooth.append(float(column_index))
+                        tooth_y.append(dates[entry_index])
                 # if a gap
-                elif int(binEntry) == 0:
+                elif int(bin_entry) == 0:
                     # if column is centerindex
-                    if int(columnIndex) == 0:
-                        arcCenterG.append(float(arcEntry))
-                        binCenterG.append(float(columnIndex))
-                        centerGY.append(dates[entryIndex])
+                    if int(column_index) == 0:
+                        arc_center_g.append(float(arc_entry))
+                        bin_center_g.append(float(column_index))
+                        center_g_y.append(dates[entry_index])
                     # if not a centergap
                     else:
-                        arcGap.append(float(arcEntry))
-                        binGap.append(float(columnIndex))
-                        gapY.append(dates[entryIndex])
+                        arc_gap.append(float(arc_entry))
+                        bin_gap.append(float(column_index))
+                        gap_y.append(dates[entry_index])
 
     ax_fig, arc_ax  = plt.subplots()
     bin_fig, bin_ax = plt.subplots()
@@ -163,16 +151,15 @@ def plot_result() -> None:
     ax_fig.suptitle("Arclength Plot")
     bin_fig.suptitle("Index Plot")
 
-    arc_ax.scatter(arcTooth, toothY, c="c", s=10)
-    arc_ax.scatter(arcGap, gapY, c="#5A5A5A", s=10)
-    arc_ax.scatter(arcCenterG, centerGY, c="#FFCCCB", s=10)
-    arc_ax.scatter(arcCenterT, centerTY, c="r", s=10)
+    arc_ax.scatter(arc_tooth, tooth_y, c="c", s=10)
+    arc_ax.scatter(arc_gap, gap_y, c="#5A5A5A", s=10)
+    arc_ax.scatter(arc_center_g, center_g_y, c="#FFCCCB", s=10)
+    arc_ax.scatter(arc_center_t, center_t_y, c="r", s=10)
 
-    bin_ax.scatter(binTooth, toothY, c="c", s=10)
-    bin_ax.scatter(binGap, gapY, c="#5A5A5A", s=10)
-    bin_ax.scatter(binCenterG, centerGY, c="#FFCCCB", s=10)
-    bin_ax.scatter(binCenterT, centerTY, c="r", s=10)
-
+    bin_ax.scatter(bin_tooth, tooth_y, c="c", s=10)
+    bin_ax.scatter(bin_gap, gap_y, c="#5A5A5A", s=10)
+    bin_ax.scatter(bin_center_g, center_g_y, c="#FFCCCB", s=10)
+    bin_ax.scatter(bin_center_t, center_t_y, c="r", s=10)
 
     curr_date = dates[0]
     last_date = dates[-1]
@@ -194,7 +181,6 @@ def plot_result() -> None:
     arc_ax.grid(which='major', color="k", alpha=0.7)
     bin_ax.grid(which='major', color="k", alpha=0.7)
 
-
     ax_fig.tight_layout()
     bin_fig.tight_layout()
 
@@ -205,48 +191,129 @@ def plot_result() -> None:
 
 
 def analyze_result() -> None:
+    """
+    Runs format_result and plot_result and open an interactive interface 
+    for quickly opening relevant visualizations. Note that opening the 
+    GUI and editing will not apply the effects immediately. Please run 
+    the "format" or "analyze" step again to update.  
+
+    left-click: opens projected image
+    right-click: opens GUI image editor
+    """
     global DATA_DATES, ALL_DATES, FILE_NAMES
     # set up 
     format_result()
     ax_fig, arc_ax, bin_fig, bin_ax = plot_result()
-
     output_path = os.path.join("processed", "output")
     df_arclength = pd.read_csv(os.path.join(output_path, "arclength data.csv"))
-    DATA_DATES = sorted([datetime.strptime(d, '%Y-%m-%d') for d in df_arclength["date"]])
 
+    # update 
+    DATA_DATES = sorted([datetime.strptime(d, '%Y-%m-%d') for d in df_arclength["date"]])
     FILE_NAMES = [file for file in os.listdir(os.path.join(os.getcwd(),"img")) 
                      if suffix(file) in CONFIG.FILE_TYPES]
     ALL_DATES = [parse_date(img_name) for img_name in FILE_NAMES]
+    
+    # connect event listners
+    ax_fig.canvas.mpl_connect("button_press_event", _click_handler)
+    ax_fig.canvas.mpl_connect("button_release_event", _release_handler)
+    bin_fig.canvas.mpl_connect("button_press_event", _click_handler)
+    bin_fig.canvas.mpl_connect("button_release_event", _release_handler)
 
-    ax_fig.canvas.mpl_connect("button_press_event", _plot_button_handler)
-    bin_fig.canvas.mpl_connect("button_press_event", _plot_button_handler)
     plt.show()
 
 
-def _plot_button_handler(event) -> None:
+START_INDEX = None
+
+def _click_handler(event) -> None:
     """
+    Handler for button press event
     """
+    global START_INDEX
     if event.ydata is not None:
-        days_delta = timedelta(days = int(event.ydata))
-        start_time = datetime(year=1970, month=1, day=1)
-        clicked_time = start_time + days_delta
+        data_index, selected_date_index =  _find_image_index(event.ydata)
 
-        time_differences = np.absolute(np.array(DATA_DATES)- clicked_time)
-        selected_date = DATA_DATES[time_differences.argmin()]
-        selected_date_index = ALL_DATES.index(selected_date)
-
+        START_INDEX = data_index
         file_name = FILE_NAMES[selected_date_index]
-        img_name = os.path.splitext(file_name)[0]
-        file_extension = os.path.splitext(file_name)[1]
+        img_name, file_extension = os.path.splitext(file_name)
 
-        if event.button == 1:
-            img = cv2.imread(os.path.join(os.getcwd(), "processed", "manual", img_name, "manual 1D.jpg"))
-            cv2.imshow(img_name, img)
-            cv2.waitKey(0)
-            cv2.destroyWindow(img_name)
-        elif event.button == 3:
+        if event.button == 3:
             GUI(file_name, img_name, file_extension)
 
+
+def _release_handler(event) -> None:
+    """
+    Handler for button release event
+    """
+    global START_INDEX
+    if event.ydata is not None and START_INDEX is not None:
+        data_index, selected_date_index =  _find_image_index(event.ydata)
+
+        selected_indeces = []
+        for index in range(START_INDEX, data_index + 1):
+            selected_indeces.append(ALL_DATES.index(DATA_DATES[index]))
+
+
+        if event.button == 1:
+            max_width = 0
+
+            # stack images into img
+            for index in selected_indeces:
+                curr_file_name = FILE_NAMES[index]
+                curr_img_name, curr_file_extension = os.path.splitext(curr_file_name)
+                curr_img = cv2.imread(os.path.join(os.getcwd(), "processed", "manual", 
+                                                    curr_img_name, f"manual 1D{curr_file_extension}"))
+                max_width = curr_img.shape[1] if curr_img.shape[1] > max_width else max_width
+
+
+            selected_start_index = ALL_DATES.index(DATA_DATES[START_INDEX])
+            file_name = FILE_NAMES[selected_start_index]
+            img_name, file_extension = os.path.splitext(file_name)
+            img = cv2.imread(os.path.join(os.getcwd(), "processed", "manual", 
+                                          img_name, f"manual 1D{file_extension}"))
+            img_resized = cv2.resize(img, 
+                                     [max_width, CONFIG.SAMPLING_WIDTH * 2],
+                                    interpolation = cv2.INTER_AREA)
+            
+            START_INDEX = None
+            
+            # stack images into img_resized vertically
+            for index in selected_indeces:
+                if index != selected_start_index:
+                    curr_file_name = FILE_NAMES[index]
+                    curr_img_name = os.path.splitext(curr_file_name)[0]
+                    curr_file_extension = os.path.splitext(curr_file_name)[1]
+                    curr_img = cv2.imread(os.path.join(os.getcwd(), "processed", "manual", 
+                                                       curr_img_name, f"manual 1D{curr_file_extension}"))
+                    curr_img_resized = cv2.resize(curr_img, 
+                                     [max_width, CONFIG.SAMPLING_WIDTH * 2],
+                                    interpolation = cv2.INTER_AREA)
+                    img_resized = np.concatenate((curr_img_resized, img_resized), axis=0) 
+
+            # resize window size
+            if CONFIG.MAX_WIDTH is not None:
+                ratio = CONFIG.MAX_WIDTH / img_resized.shape[1]
+                dimension = (CONFIG.MAX_WIDTH, int(img_resized.shape[0] * ratio))
+                resized = cv2.resize(img_resized, dimension, interpolation=cv2.INTER_AREA)
+                cv2.imshow(img_name, resized)
+            else: 
+                cv2.imshow(img_name, img_resized)
+
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+def _find_image_index(ydata) -> int:
+    """
+    """
+    days_delta = timedelta(days = int(ydata))
+    start_time = datetime(year=1970, month=1, day=1)
+    clicked_time = start_time + days_delta
+
+    time_differences = np.absolute(np.array(DATA_DATES)- clicked_time)
+    data_index = time_differences.argmin()
+    selected_date = DATA_DATES[data_index]
+    selected_date_index = ALL_DATES.index(selected_date)
+
+    return (data_index, selected_date_index)
 
 
 #---------------------------------------
