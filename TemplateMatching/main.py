@@ -74,15 +74,15 @@ def format() -> None:
     """
     Performs formating / plotting of results
     """
-    format_result()
-    plot_result()
+    format_result(True)
+    plot_result(True)
 
 
 def analyze() -> None:
     """
     Open interface for analysis of results
     """
-    analyze_result()
+    analyze_result(True)
 
 
 

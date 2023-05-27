@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import time
 import cv2
 
-from utils import CONFIG, Match
+from utils import CONFIG
 from helper import parse_date, suffix
 from GUI import GUI
 
@@ -16,10 +16,15 @@ ALL_DATES = []
 FILE_NAMES = []
 
 
-def format_result() -> None:
+def format_result(display_time: bool = False) -> None:
     """
-    Format output data into the desired format. 
+    Combined all output files into the desired format (one binary and one arclength result)
+
+    Params
+    ------
+    display_time: display log of time to run function
     """
+    start_time = time.time()
 
     # finds path of all data files, sorted
     data_paths = search_file(CONFIG.RESULT_PATH, CONFIG.DATA_FILENAME)
@@ -29,7 +34,7 @@ def format_result() -> None:
     dates = []
 
     for i in range(len(data_paths)):
-        # read file, append date 
+        # read file, parse date 
         df = pd.read_csv(data_paths[i])
         subdirname = os.path.basename(os.path.dirname(data_paths[i]))
         date = parse_date(subdirname)
@@ -49,7 +54,7 @@ def format_result() -> None:
         if len(df) > max_length:
             max_length = len(df)
 
-    # set dataframe shape (1 column for date + the rest for teeth indecies)
+    # setup dataframe to store desired data (1 column for date + the rest for teeth indecies)
     column_ids = np.array(range(max_center_index + max_length - 1)) - max_center_index
     columns_names = [str(column_id) for column_id in column_ids]
     df_output_arclength = pd.DataFrame(columns=["date"]+columns_names)
@@ -62,8 +67,8 @@ def format_result() -> None:
         x = df["x"].to_numpy()
         types = df["type"]
         
-        # arclength representation = x values of projection
-        arclength_data_rep = x - df["x"][center_indecies[i]]
+        # arclength representation = x values of projection (relative to center)
+        arclength_data_rep = x - df["x"][center_indecies[i]] 
         # binary data representation = 1 for teeth, 0 for gap
         binary_data_rep = [1 if (types[i] == "Tooth.TOOTH" or types[i] == "Tooth.CENTER_T"
                                 or types[i] == "Tooth.ERROR_T") else 0 for i in range(len(x))]
@@ -76,7 +81,7 @@ def format_result() -> None:
         df_entry_arclength = [dates[i]] + arclength_data_rep_pad
         df_entry_binary = [dates[i]] + binary_data_rep_pad
 
-        # aka add new entry into dataframe
+        # add current file's entry into dataframe (at the last spot)
         df_output_arclength.loc[entry_so_far] = df_entry_arclength
         df_output_binary.loc[entry_so_far] = df_entry_binary
         entry_so_far += 1
@@ -86,12 +91,22 @@ def format_result() -> None:
     df_output_arclength.to_csv(os.path.join("processed", "output", "arclength data.csv"))
 
 
+    if display_time:
+        print(f"FORMAT      | {time.time()-start_time} s")
 
-def plot_result() -> None:
-    """
-    Plot the formatted output data and save it
-    """
 
+
+def plot_result(display_time: bool = False) -> None:
+    """
+    Plot and save the formatted output data
+
+    Params
+    ------
+    display_time: display log of time to run function
+    """
+    start_time = time.time()
+
+    # checks if output data exist
     output_path = os.path.join("processed", "output")
     try:
         df_arclength = pd.read_csv(os.path.join(output_path, "arclength data.csv"))
@@ -99,47 +114,51 @@ def plot_result() -> None:
     except:
         raise RuntimeError(f"Formatted output data do not exist in /processed/output. Did you run format_result?")
 
-    arc_tooth, arc_gap, arc_center_t, arc_center_g = [], [], [], []
-    bin_tooth, bin_gap, bin_center_t, bin_center_g = [], [], [], []
+    arc_tooth_x, arc_gap_x, arc_center_t_x, arc_center_g_x = [], [], [], []
+    bin_tooth_x, bin_gap_x, bin_center_t_x, bin_center_g_x = [], [], [], []
     tooth_y, gap_y, center_t_y, center_g_y = [], [], [], []
 
-    # convert string into dates
+    # parse string into dates from output file
     dates = [datetime.strptime(d, '%Y-%m-%d') for d in df_arclength["date"]]
-    # first two columns are: 1) index of df, 2) date
+    # first two columns are: 1) index and 2) date, rest are teeth index
     index_columns = df_arclength.columns.to_list()[2:] 
 
     for entry_index in range(len(dates)):
         for column_index in index_columns:
+
+            # date = entry_index (the entry_indexth entry), tooth index = col_index
+            # it's possible for it to not exist
             arc_entry = df_arclength[column_index][entry_index]
             bin_entry = df_binary[column_index][entry_index]
 
-            # if not empty
+            # if exists
             if not pd.isna(bin_entry):
                 # if a tooth
                 if int(bin_entry) == 1:
-                    # if column is the centerindex
+                    # if column is 0 (center tooth)
                     if int(column_index) == 0:
-                        arc_center_t.append(float(arc_entry))
-                        bin_center_t.append(float(column_index))
+                        arc_center_t_x.append(float(arc_entry))
+                        bin_center_t_x.append(float(column_index))
                         center_t_y.append(dates[entry_index]) 
                     # if not a centertooth
                     else:
-                        arc_tooth.append(float(arc_entry))
-                        bin_tooth.append(float(column_index))
+                        arc_tooth_x.append(float(arc_entry))
+                        bin_tooth_x.append(float(column_index))
                         tooth_y.append(dates[entry_index])
                 # if a gap
                 elif int(bin_entry) == 0:
-                    # if column is centerindex
+                    # if column is 0 (center gap)
                     if int(column_index) == 0:
-                        arc_center_g.append(float(arc_entry))
-                        bin_center_g.append(float(column_index))
+                        arc_center_g_x.append(float(arc_entry))
+                        bin_center_g_x.append(float(column_index))
                         center_g_y.append(dates[entry_index])
-                    # if not a centergap
+                    # if not a center gap
                     else:
-                        arc_gap.append(float(arc_entry))
-                        bin_gap.append(float(column_index))
+                        arc_gap_x.append(float(arc_entry))
+                        bin_gap_x.append(float(column_index))
                         gap_y.append(dates[entry_index])
 
+    # plot 
     ax_fig, arc_ax  = plt.subplots()
     bin_fig, bin_ax = plt.subplots()
 
@@ -151,16 +170,17 @@ def plot_result() -> None:
     ax_fig.suptitle("Arclength Plot")
     bin_fig.suptitle("Index Plot")
 
-    arc_ax.scatter(arc_tooth, tooth_y, c="c", s=10)
-    arc_ax.scatter(arc_gap, gap_y, c="#5A5A5A", s=10)
-    arc_ax.scatter(arc_center_g, center_g_y, c="#FFCCCB", s=10)
-    arc_ax.scatter(arc_center_t, center_t_y, c="r", s=10)
+    arc_ax.scatter(arc_tooth_x, tooth_y, c="c", s=10)
+    arc_ax.scatter(arc_gap_x, gap_y, c="#5A5A5A", s=10)
+    arc_ax.scatter(arc_center_g_x, center_g_y, c="#FFCCCB", s=10)
+    arc_ax.scatter(arc_center_t_x, center_t_y, c="r", s=10)
 
-    bin_ax.scatter(bin_tooth, tooth_y, c="c", s=10)
-    bin_ax.scatter(bin_gap, gap_y, c="#5A5A5A", s=10)
-    bin_ax.scatter(bin_center_g, center_g_y, c="#FFCCCB", s=10)
-    bin_ax.scatter(bin_center_t, center_t_y, c="r", s=10)
+    bin_ax.scatter(bin_tooth_x, tooth_y, c="c", s=10)
+    bin_ax.scatter(bin_gap_x, gap_y, c="#5A5A5A", s=10)
+    bin_ax.scatter(bin_center_g_x, center_g_y, c="#FFCCCB", s=10)
+    bin_ax.scatter(bin_center_t_x, center_t_y, c="r", s=10)
 
+    # set ticks from first to last date (for the grid)
     curr_date = dates[0]
     last_date = dates[-1]
     date_ticks = []
@@ -187,10 +207,14 @@ def plot_result() -> None:
     ax_fig.savefig(os.path.join(output_path,"arclength plot.png"))
     bin_fig.savefig(os.path.join(output_path,"index plot.png"))
 
+    if display_time:
+        print(f"PLOT RESULT | {time.time()-start_time} s")
+
     return(ax_fig, arc_ax, bin_fig, bin_ax)
 
+#---------------------------------------------------------------------
 
-def analyze_result() -> None:
+def analyze_result(display_time: bool = False) -> None:
     """
     Runs format_result and plot_result and open an interactive interface 
     for quickly opening relevant visualizations. Note that opening the 
@@ -201,6 +225,8 @@ def analyze_result() -> None:
     right-click: opens GUI image editor
     """
     global DATA_DATES, ALL_DATES, FILE_NAMES
+
+    start_time = time.time()
     # set up 
     format_result()
     ax_fig, arc_ax, bin_fig, bin_ax = plot_result()
@@ -214,17 +240,18 @@ def analyze_result() -> None:
     ALL_DATES = [parse_date(img_name) for img_name in FILE_NAMES]
     
     # connect event listners
-    ax_fig.canvas.mpl_connect("button_press_event", _click_handler)
-    ax_fig.canvas.mpl_connect("button_release_event", _release_handler)
-    bin_fig.canvas.mpl_connect("button_press_event", _click_handler)
-    bin_fig.canvas.mpl_connect("button_release_event", _release_handler)
+    ax_fig.canvas.mpl_connect("button_press_event", _on_click)
+    ax_fig.canvas.mpl_connect("button_release_event", _on_release)
+    bin_fig.canvas.mpl_connect("button_press_event", _on_click)
+    bin_fig.canvas.mpl_connect("button_release_event", _on_release)
 
     plt.show()
-
+    if display_time:
+        print(f"PLOT RESULT | {time.time()-start_time} s")
 
 START_INDEX = None
 
-def _click_handler(event) -> None:
+def _on_click(event) -> None:
     """
     Handler for button press event
     """
@@ -240,7 +267,7 @@ def _click_handler(event) -> None:
             GUI(file_name, img_name, file_extension)
 
 
-def _release_handler(event) -> None:
+def _on_release(event) -> None:
     """
     Handler for button release event
     """
@@ -297,6 +324,12 @@ def _release_handler(event) -> None:
 
 def _find_image_index(ydata: float) -> int:
     """
+    Find the index of the closest image in time to ydata (where the user clicked).
+
+    Returns
+    -------
+    data_index: closest image index in the array of files with data
+    selected_date_index: closest image index in img
     """
     days_delta = timedelta(days = int(ydata))
     start_time = datetime(year=1970, month=1, day=1)
@@ -311,6 +344,12 @@ def _find_image_index(ydata: float) -> int:
 
 def _stack_img(img, max_width: int, curr_index: int):
     """
+    Read projected image associated with curr_index. Resize to max_width. Stack new
+    image on top of img.
+
+    Returns
+    -------
+    stacked image
     """
     curr_file_name = FILE_NAMES[curr_index]
     curr_img_name = os.path.splitext(curr_file_name)[0]
@@ -327,9 +366,9 @@ def _stack_img(img, max_width: int, curr_index: int):
 
 
 
-#---------------------------------------
+#---------------------------------------------------------------------
 "HELPERS"
-#----------------------------------------
+#---------------------------------------------------------------------
 
 def search_file(root: str, file_name: str) -> list[str]:
     """
