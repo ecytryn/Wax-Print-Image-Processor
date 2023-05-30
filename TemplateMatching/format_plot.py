@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 import numpy as np
 from datetime import datetime, timedelta
 import time
@@ -123,6 +125,9 @@ def format_erupfall(display_time: bool = False) -> None:
         binary_column = df_binary[column_index].to_numpy()
         eruption_column = []
         fall_out_column = []
+        
+        no_erup_so_far = 0
+        no_fall_so_far = 0
 
         for entry_index in range(1, len(dates)):
             prev_val = binary_column[entry_index-1]
@@ -136,14 +141,18 @@ def format_erupfall(display_time: bool = False) -> None:
             else:
                 if(prev_val == 0 and 
                     curr_val == 1):
-                    eruption_column.append(1)
+                    eruption_column.append(no_erup_so_far + 1)
+                    no_erup_so_far = 0
                 else:
+                    no_erup_so_far += 1
                     eruption_column.append(0)
 
                 if(prev_val == 1 and 
                     curr_val == 0):
-                    fall_out_column.append(1)
+                    fall_out_column.append(no_fall_so_far + 1)
+                    no_fall_so_far = 0
                 else:
+                    no_fall_so_far += 1
                     fall_out_column.append(0)
         
         eruption_data[column_index] = eruption_column
@@ -218,6 +227,8 @@ def plot_result(display_time: bool = False) -> None:
     erup_y, nerup_y = [], []
     fall_y, nfall_y = [], []
     erupfall_dates = dates[1:]
+    c_erupt = []
+    c_fall = []
 
     for entry_index in range(len(erupfall_dates)):
         for column_index in index_columns:
@@ -229,20 +240,22 @@ def plot_result(display_time: bool = False) -> None:
             # if exists
             if not pd.isna(erup_entry):
                 # if eruption
-                if int(erup_entry) == 1:
+                if int(erup_entry) != 0:
                     erup_x.append(float(column_index))
                     erup_y.append(erupfall_dates[entry_index])
+                    c_erupt.append(int(erup_entry))
                 # if not eruption
-                elif int(erup_entry) == 0:
+                elif int(fall_entry) == 0:
                     nerup_x.append(float(column_index))
                     nerup_y.append(erupfall_dates[entry_index])
 
             # if exists
             if not pd.isna(fall_entry):
                 # if eruption
-                if int(fall_entry) == 1:
+                if int(fall_entry) != 0:
                     fall_x.append(float(column_index))
                     fall_y.append(erupfall_dates[entry_index])
+                    c_fall.append(int(fall_entry))
                 # if not eruption
                 elif int(fall_entry) == 0:
                     nfall_x.append(float(column_index))
@@ -259,6 +272,9 @@ def plot_result(display_time: bool = False) -> None:
     ax_fig.set_figheight(CONFIG.HEIGHT_SIZE)
     bin_fig.set_figwidth(CONFIG.WIDTH_SIZE)
     bin_fig.set_figheight(CONFIG.HEIGHT_SIZE)
+    # to use the Cytrynbaum ratio
+    # erup_fig.set_figwidth(15)
+    # erup_fig.set_figheight(4)
     erup_fig.set_figwidth(CONFIG.WIDTH_SIZE)
     erup_fig.set_figheight(CONFIG.HEIGHT_SIZE)
     fall_fig.set_figwidth(CONFIG.WIDTH_SIZE)
@@ -270,15 +286,18 @@ def plot_result(display_time: bool = False) -> None:
     fall_fig.suptitle("Fall Out Plot")
 
     # plot data
-    arc_ax.scatter(arc_tooth_x, tooth_y, c="indigo", s=10)
-    arc_ax.scatter(arc_gap_x, gap_y, c="lightgray", s=10)
-    bin_ax.scatter(bin_tooth_x, tooth_y, c="indigo", s=10)
-    bin_ax.scatter(bin_gap_x, gap_y, c="lightgray", s=10)
+    arc_ax.scatter(arc_tooth_x, tooth_y, c="indigo", s=15)
+    arc_ax.scatter(arc_gap_x, gap_y, c="lightgray", s=15)
+    bin_ax.scatter(bin_tooth_x, tooth_y, c="indigo", s=15)
+    bin_ax.scatter(bin_gap_x, gap_y, c="lightgray", s=15)
 
-    erup_ax.scatter(erup_x, erup_y, c="red", s=10)
-    erup_ax.scatter(nerup_x, nerup_y, c="lightgray", s=10)
-    fall_ax.scatter(fall_x, fall_y, c="red", s=10)
-    fall_ax.scatter(nfall_x, nfall_y, c="lightgray", s=10)
+    erup_ax.scatter(erup_x, erup_y, c=c_erupt, s=50, cmap="winter")
+    # erup_ax.scatter(nerup_x, nerup_y, c="lightgray", s=20)
+    fall_ax.scatter(fall_x, fall_y, c=c_fall, s=50, cmap="winter")
+    # fall_ax.scatter(nfall_x, nfall_y, c="lightgray", s=20)
+
+    erup_fig.colorbar(ScalarMappable(norm=Normalize(min(c_erupt), max(c_erupt)), cmap="winter"), ax=erup_ax)
+    fall_fig.colorbar(ScalarMappable(norm=Normalize(min(c_fall), max(c_fall)), cmap="winter"), ax=fall_ax)
 
     # set ticks from first to last date (for the grid)
     dates = sorted(dates)
@@ -308,6 +327,7 @@ def plot_result(display_time: bool = False) -> None:
     arc_ax.grid(which='major', color="k")
     bin_ax.grid(which='minor', color="k", linestyle=":", alpha=0.6)
     bin_ax.grid(which='major', color="k")
+    # comment out the two lines below to get the Cytrybaum plot
     erup_ax.grid(which='minor', color="k", linestyle=":", alpha=0.6)
     erup_ax.grid(which='major', color="k")
     fall_ax.grid(which='minor', color="k", linestyle=":", alpha=0.6)

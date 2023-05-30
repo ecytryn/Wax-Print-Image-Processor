@@ -112,7 +112,6 @@ if __name__ == "__main__":
     
     # all other arguments 
     args = [arg for arg in args if (arg not in {"match", "manual", "fitproj", "format", "analyze", "main.py"})]
-    print(args)
     # all images in image 
     images = sorted([file for file in os.listdir(os.path.join(os.getcwd(),"img")) if suffix(file) in CONFIG.FILE_TYPES])
     num_of_images = len(images)
