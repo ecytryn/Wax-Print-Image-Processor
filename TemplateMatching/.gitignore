@@ -3,3 +3,4 @@
 ./template 1D
 ./__pycache__
 ./venv
+.dockerignore
