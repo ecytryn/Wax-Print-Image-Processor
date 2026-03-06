@@ -116,7 +116,8 @@ class GUI:
 
         # reads image, set up mouse callback
         self.image = cv2.imread(img_path)
-        cv2.namedWindow(img_name)
+#        cv2.namedWindow(img_name)
+        cv2.namedWindow(img_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(img_name, self.left_click)
         self.mode_index = 0
 
@@ -389,8 +390,14 @@ class GUI:
             draw = True
             dataset_size = len(self.x)
 
-            clicked_x = clicked_x / self.ratio
-            clicked_y = clicked_y / self.ratio
+#            clicked_x = clicked_x / self.ratio
+#            clicked_y = clicked_y / self.ratio
+
+            window_rect = cv2.getWindowImageRect(img_name)
+            window_w = window_rect[2]
+            window_h = window_rect[3]
+            clicked_x = clicked_x * self.image.shape[1] / window_w
+            clicked_y = clicked_y * self.image.shape[0] / window_h
 
             for index in range(dataset_size):
                 # if the user clicks within a square, delete the square 
