@@ -1,6 +1,21 @@
 ./img
 ./template
 ./template 1D
-./__pycache__
-./venv
 .dockerignore
+
+# Generated files
+__pycache__/
+processed/
+
+# Environment
+venv/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log

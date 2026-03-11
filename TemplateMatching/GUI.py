@@ -121,8 +121,21 @@ class GUI:
         cv2.setMouseCallback(img_name, self.left_click)
         self.mode_index = 0
 
-
-        self.ratio = 1 if CONFIG.MAX_WIDTH is None else CONFIG.MAX_WIDTH / self.image.shape[1]
+        if CONFIG.MAX_WIDTH is not None:
+            max_width = CONFIG.MAX_WIDTH
+        else:
+            import platform
+            if platform.system() == "Darwin":
+                from AppKit import NSScreen
+                max_width = int(NSScreen.mainScreen().frame().size.width * 0.9)
+            elif platform.system() == "Windows":
+                import ctypes
+                user32 = ctypes.windll.user32
+                max_width = int(user32.GetSystemMetrics(0) * 0.9)
+            else:
+                max_width = 1200  # fallback for Linux
+        
+        self.ratio = max_width / self.image.shape[1]
 
         while True:
             
@@ -209,6 +222,9 @@ class GUI:
                                             Tooth.NO_BOX)
                 
             GUI.save(self.file_name, self.img_name, self.file_type, Match.TWO_D, self.image, df_res)
+            return True
+        elif key == ord("q"):
+            cv2.destroyAllWindows()
             return True
         elif key == ord("1"): # 1
             self._curr_mode = Tooth.TOOTH
@@ -393,7 +409,7 @@ class GUI:
 #            clicked_x = clicked_x / self.ratio
 #            clicked_y = clicked_y / self.ratio
 
-            window_rect = cv2.getWindowImageRect(img_name)
+            window_rect = cv2.getWindowImageRect(self.img_name)
             window_w = window_rect[2]
             window_h = window_rect[3]
             clicked_x = clicked_x * self.image.shape[1] / window_w
