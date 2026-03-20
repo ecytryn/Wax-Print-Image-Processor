@@ -93,6 +93,23 @@ if __name__ == "__main__":
 
     # obtains arguments
     args = sys.argv
+
+    # parse optional --width argument
+    if "--width" in args:
+        width_index = args.index("--width")
+        try:
+            custom_width = int(args[width_index + 1])
+            args.pop(width_index)      # remove --width
+            args.pop(width_index)      # remove the value
+        except (ValueError, IndexError):
+            raise ValueError("--width must be followed by an integer, e.g. --width 1200")
+    else:
+        custom_width = None
+
+    if custom_width is not None:
+        from utils import apply_custom_width
+        apply_custom_width(custom_width)
+
     # bool structure for which processes to run
     processes = {"match": False,
                  "manual": False,
