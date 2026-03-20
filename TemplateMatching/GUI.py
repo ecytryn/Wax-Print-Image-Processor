@@ -1,10 +1,19 @@
 import cv2
 import os
+import platform
+import ctypes
 import pandas as pd
 import numpy as np
 from pynput.keyboard import Key, Controller
 from utils import Tooth, Match, CONFIG
 import time
+
+# Windows DPI awareness fix
+if platform.system() == "Windows":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        pass
 
 
 class GUI:
@@ -26,7 +35,8 @@ class GUI:
     3: enter "center tooth" mode
     4. enter "center gap" mode
     space: show or hide boxes
-    save: save data and exit
+    s: save data and exit
+    q: exit without saving
     esc: exit without saving
     """
 
@@ -51,6 +61,7 @@ class GUI:
         file_type: image extensiom
         file_names: a lexically sorted array of all images in images folder
         index: the index of current image in file_names images
+        display_time: display log of time to run function
         """
 
         start_time = time.time()
@@ -116,26 +127,11 @@ class GUI:
 
         # reads image, set up mouse callback
         self.image = cv2.imread(img_path)
-#        cv2.namedWindow(img_name)
         cv2.namedWindow(img_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(img_name, self.left_click)
         self.mode_index = 0
 
-        if CONFIG.MAX_WIDTH is not None:
-            max_width = CONFIG.MAX_WIDTH
-        else:
-            import platform
-            if platform.system() == "Darwin":
-                from AppKit import NSScreen
-                max_width = int(NSScreen.mainScreen().frame().size.width * 0.9)
-            elif platform.system() == "Windows":
-                import ctypes
-                user32 = ctypes.windll.user32
-                max_width = int(user32.GetSystemMetrics(0) * 0.9)
-            else:
-                max_width = 1200  # fallback for Linux
-        
-        self.ratio = max_width / self.image.shape[1]
+        self.ratio = 1 if CONFIG.MAX_WIDTH is None else CONFIG.MAX_WIDTH / self.image.shape[1]
 
         while True:
             
@@ -197,6 +193,9 @@ class GUI:
         elif key == 27: # esc
             cv2.destroyAllWindows()
             return True
+        elif key == ord("q"): # q - quit without saving
+            cv2.destroyAllWindows()
+            return True
         elif key == 9 and self._curr_mode != Tooth.NO_BOX: # tab
             # change into the next mode
             self.mode_index = (self.mode_index + 1) % len(self.MODES)
@@ -222,9 +221,6 @@ class GUI:
                                             Tooth.NO_BOX)
                 
             GUI.save(self.file_name, self.img_name, self.file_type, Match.TWO_D, self.image, df_res)
-            return True
-        elif key == ord("q"):
-            cv2.destroyAllWindows()
             return True
         elif key == ord("1"): # 1
             self._curr_mode = Tooth.TOOTH
@@ -406,9 +402,7 @@ class GUI:
             draw = True
             dataset_size = len(self.x)
 
-#            clicked_x = clicked_x / self.ratio
-#            clicked_y = clicked_y / self.ratio
-
+            # scale click coordinates from window space to image space
             window_rect = cv2.getWindowImageRect(self.img_name)
             window_w = window_rect[2]
             window_h = window_rect[3]
