@@ -1,0 +1,646 @@
+\documentclass[11pt, letterpaper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{parskip}
+
+% Colors
+\definecolor{codeblue}{RGB}{30, 90, 160}
+\definecolor{codegray}{RGB}{245, 245, 245}
+\definecolor{tipgreen}{RGB}{0, 120, 60}
+\definecolor{warnred}{RGB}{180, 30, 30}
+\definecolor{noteblue}{RGB}{20, 80, 150}
+\definecolor{headergray}{RGB}{60, 60, 60}
+
+% Section formatting
+\titleformat{\section}{\large\bfseries\color{headergray}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{codeblue}}{}{0em}{}
+
+% Code listing style
+\lstset{
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  framerule=0pt,
+  rulecolor=\color{codegray},
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=6pt,
+  belowskip=6pt,
+}
+
+% Tip box
+\newmdenv[
+  backgroundcolor=green!8,
+  linecolor=tipgreen,
+  linewidth=1.5pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+]{tipbox}
+
+% Note box
+\newmdenv[
+  backgroundcolor=blue!5,
+  linecolor=noteblue,
+  linewidth=1.5pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+]{notebox}
+
+% Warning box
+\newmdenv[
+  backgroundcolor=red!5,
+  linecolor=warnred,
+  linewidth=1.5pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+]{warnbox}
+
+% Header/footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{Wax Bite Image Processor}}
+\fancyhead[R]{\small\textcolor{gray}{User Guide}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=codeblue,
+  urlcolor=codeblue,
+}
+
+% -----------------------------------------------------------------------
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Wax Bite Image Processor}\\[6pt]
+  {\large Setup \& User Guide}\\[4pt]
+  {\small\textcolor{gray}{macOS and Windows}}
+\end{center}
+
+\vspace{0.5em}
+\hrule
+\vspace{1em}
+
+\tableofcontents
+
+\newpage
+
+% -----------------------------------------------------------------------
+\section{Overview}
+
+The Wax Bite Image Processor analyzes wax bite print images of gecko teeth taken at multiple
+time points to track tooth eruption and loss over time. Images are processed through a pipeline
+of steps, each building on the output of the previous one.
+
+\subsection*{Pipeline Summary}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{Command} & \textbf{Description} \\
+\midrule
+Template Matching & \texttt{match}   & Automatically locates teeth in each image \\
+Manual Annotation & \texttt{manual}  & Review and correct automated results \\
+Fit \& Project    & \texttt{fitproj} & Fits a hyperbola to the dental arch; projects to 1D \\
+Format            & \texttt{format}  & Combines data across time points; generates plots \\
+Analyze           & \texttt{analyze} & Opens plots in an interactive exploration window \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{notebox}
+\textbf{Which steps are required?} \texttt{manual} and \texttt{fitproj} are the core required steps.
+\texttt{match} is optional but saves time by pre-populating annotations. \texttt{format} and
+\texttt{analyze} are run after all images are processed to view results.
+\end{notebox}
+
+% -----------------------------------------------------------------------
+\section{Folder Structure}
+
+The application is designed to work with one animal's images at a time. A recommended folder
+structure keeps each animal's data organized outside the repository so the repository stays clean
+between sessions.
+
+\subsection*{Recommended Layout}
+
+\begin{lstlisting}
+Documents/
+  GeckoData/                        <- your storage folder (name it anything)
+    Animals/
+      animal1/
+        images/                     <- original images live here permanently
+        processed/                  <- results moved here after each session
+      animal2/
+        images/
+        processed/
+  Wax-Bite-Image-Processor/         <- the repository (cloned once)
+    TemplateMatching/
+      img/                          <- working folder: copy images here to process
+      processed/                    <- working folder: results appear here
+      template/                     <- tooth templates for automated matching
+      ...
+\end{lstlisting}
+
+\subsection*{Workflow for Each Animal}
+
+Follow these steps each time you want to process a new animal's images. Your originals are
+never deleted --- you only ever work with copies inside the repository.
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+  \item \textbf{Copy images into the repository.}
+    Copy all image files from \texttt{Animals/animal1/images/} into
+    \texttt{Wax-Bite-Image-Processor/TemplateMatching/img/}.
+    Your originals remain safely in the \texttt{Animals} folder.
+
+  \item \textbf{Restore previous results (if re-analyzing).}
+    If you have previously processed this animal and want to continue from where you left
+    off, copy the contents of \texttt{Animals/animal1/processed/} back into
+    \texttt{TemplateMatching/processed/}.
+
+  \item \textbf{Run the analysis.}
+    Follow the instructions in Sections~\ref{sec:installation} through~\ref{sec:running}.
+
+  \item \textbf{Move results to the animal's storage folder.}
+    When done, move (not copy) the contents of \texttt{TemplateMatching/processed/} into
+    \texttt{Animals/animal1/processed/}.
+
+  \item \textbf{Delete the image copies from the repository.}
+    Delete all files from \texttt{TemplateMatching/img/}. Your originals are untouched.
+    The repository is now clean and ready for the next animal.
+\end{enumerate}
+
+\subsection*{Image Naming}
+
+Images must be named in the format \texttt{MM\_DD\_YYYY} followed by any additional
+identifier (e.g.\ \texttt{03\_15\_2024\_LG282.jpg}). The date prefix is used to sort
+images chronologically and to label results in plots. Images without this format will
+cause errors.
+
+% -----------------------------------------------------------------------
+\section{One-Time Installation}
+\label{sec:installation}
+
+\subsection*{macOS}
+
+\textbf{Step 1: Install Homebrew (if not already installed)}
+
+Homebrew is a package manager that makes installing developer tools straightforward.
+Open the Terminal application (find it in Applications $\to$ Utilities, or search with
+Spotlight) and paste:
+
+\begin{lstlisting}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+\end{lstlisting}
+
+Follow the on-screen prompts. When it finishes, close and reopen Terminal.
+
+\textbf{Step 2: Install Python and Git}
+
+\begin{lstlisting}
+brew install python@3.11 git
+\end{lstlisting}
+
+\textbf{Step 3: Clone the repository}
+
+Navigate to the folder where you want to store the repository (e.g.\ \texttt{\textasciitilde/Documents/GeckoData}),
+then clone:
+
+\begin{lstlisting}
+cd ~/Documents/GeckoData
+git clone https://github.com/ecytryn/Wax-Bite-Image-Processor.git
+cd Wax-Bite-Image-Processor/TemplateMatching
+\end{lstlisting}
+
+\textbf{Step 4: Create and activate a virtual environment}
+
+\begin{lstlisting}
+python3.11 -m venv venv
+source venv/bin/activate
+\end{lstlisting}
+
+You will see \texttt{(venv)} appear at the start of your terminal prompt when the environment
+is active.
+
+\textbf{Step 5: Install required packages}
+
+\begin{lstlisting}
+pip install -r requirements.txt
+\end{lstlisting}
+
+This may take several minutes. When it finishes and the prompt returns, installation is complete.
+
+\textbf{Step 6: Initialize the folder structure}
+
+\begin{lstlisting}
+python main.py
+\end{lstlisting}
+
+This creates the \texttt{img/}, \texttt{template/}, and \texttt{processed/} subfolders.
+
+\begin{tipbox}
+\textbf{Verifying the installation:} After running \texttt{python main.py} for the first time
+you should see an \texttt{img/} folder appear inside \texttt{TemplateMatching/}. If you see
+error messages instead, check the Troubleshooting section.
+\end{tipbox}
+
+% ---------------------------------------------------
+\subsection*{Windows}
+
+\textbf{Step 1: Install Python}
+
+\begin{enumerate}
+  \item Go to \url{https://www.python.org/downloads/release/python-3110/} in your browser.
+  \item Scroll down and click \textbf{Windows installer (64-bit)} to download.
+  \item Run the installer. \textbf{Important:} before clicking ``Install Now'', check the
+        box that says \textbf{``Add Python to PATH''} at the bottom of the window. This
+        step is critical. If you have administrator privileges, also check
+        \textbf{``Install for all users''} so that everyone who connects to this machine
+        can use the app.
+  \item Click ``Install Now'' and wait for it to finish.
+\end{enumerate}
+
+\begin{tipbox}
+To verify Python installed correctly: press the Windows key, type \texttt{cmd}, press
+Enter. In the black window that opens, type \texttt{python --version} and press Enter.
+You should see \texttt{Python 3.11.x}.
+\end{tipbox}
+
+\textbf{Step 2: Install Git}
+
+\begin{enumerate}
+  \item Go to \url{https://git-scm.com/download/win} --- the download starts automatically.
+  \item Run the installer, clicking Next through all steps; the defaults are fine.
+\end{enumerate}
+
+\textbf{Step 3: Clone the repository}
+
+\begin{enumerate}
+  \item Open File Explorer and navigate to the folder where you want to store the
+        repository (e.g.\ your Documents folder).
+  \item Click in the address bar at the top of File Explorer, type \texttt{cmd}, and
+        press Enter. A Command Prompt window will open in that folder.
+  \item Type the following and press Enter:
+\end{enumerate}
+
+\begin{lstlisting}
+git clone https://github.com/ecytryn/Wax-Bite-Image-Processor.git
+cd Wax-Bite-Image-Processor\TemplateMatching
+\end{lstlisting}
+
+\textbf{Step 4: Create and activate a virtual environment}
+
+\begin{lstlisting}
+python -m venv venv
+venv\Scripts\activate.bat
+\end{lstlisting}
+
+You will see \texttt{(venv)} appear at the start of the line when the environment is active.
+
+\textbf{Step 5: Install required packages}
+
+\begin{lstlisting}
+pip install -r requirements.txt
+\end{lstlisting}
+
+\textbf{Step 6: Initialize the folder structure}
+
+\begin{lstlisting}
+python main.py
+\end{lstlisting}
+
+\begin{warnbox}
+\textbf{Every session:} You must activate the virtual environment each time you open a new
+terminal window before running the application. On macOS: \texttt{source venv/bin/activate}.
+On Windows: \texttt{venv\textbackslash Scripts\textbackslash activate.bat}. If you forget,
+you will see a \texttt{ModuleNotFoundError}.
+\end{warnbox}
+
+% -----------------------------------------------------------------------
+\section{Running the Application}
+\label{sec:running}
+
+All commands are run from inside the \texttt{TemplateMatching/} folder with the virtual
+environment active.
+
+\subsection*{Basic Command Format}
+
+\begin{lstlisting}
+python main.py [steps] [image selection flags] [display flags]
+\end{lstlisting}
+
+\textbf{Steps} (one or more, space-separated): \texttt{match}, \texttt{manual},
+\texttt{fitproj}, \texttt{format}, \texttt{analyze}
+
+\textbf{Image selection flags:}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Flag} & \textbf{Meaning} \\
+\midrule
+\texttt{-s N} & Start at image index \texttt{N} (first image is index 0) \\
+\texttt{-n N} & Process \texttt{N} images \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Display flags:}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Flag} & \textbf{Meaning} \\
+\midrule
+\texttt{--width N} & Set annotation window width to \texttt{N} pixels for this session \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The default window width is controlled by \texttt{MAX\_WIDTH} in \texttt{utils.py} (default: 800 pixels).
+Use \texttt{--width} to override this for a session without editing the file. If the image appears
+too small or too large, try adjusting this value. A good starting point is roughly half your screen
+width. The window position on screen can be adjusted by editing \texttt{WINDOW\_X} and \texttt{WINDOW\_Y}
+in \texttt{utils.py}.
+
+\subsection*{Common Commands}
+
+\begin{lstlisting}
+# Run the full pipeline on all images
+python main.py
+
+# Run only template matching on all images
+python main.py match
+
+# Run manual annotation on all images
+python main.py manual
+
+# Run manual annotation with a custom window width
+python main.py manual --width 1200
+
+# Run fit and project on all images
+python main.py fitproj
+
+# Run multiple steps in sequence on all images
+python main.py match manual fitproj
+
+# Process only the 3rd image (index 2) through manual annotation
+python main.py -s 2 -n 1 manual
+
+# Process 5 images starting from the 1st
+python main.py -s 0 -n 5 match fitproj
+
+# Generate and view plots (no image selection needed)
+python main.py format
+python main.py analyze
+
+# Process specific named images
+python main.py 03_15_2024_LG282.jpg 03_22_2024_LG282.jpg manual
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Recommended workflow for a new dataset:}
+\begin{enumerate}[leftmargin=*, topsep=2pt, itemsep=2pt]
+  \item \texttt{python main.py match} --- run automated matching on all images
+  \item \texttt{python main.py manual} --- manually review and correct each image
+  \item \texttt{python main.py fitproj} --- fit hyperbola and project
+  \item \texttt{python main.py analyze} --- view results interactively
+\end{enumerate}
+Running steps separately (rather than all at once) gives you more control and makes it
+easier to identify which step caused an error.
+\end{notebox}
+
+% -----------------------------------------------------------------------
+\section{Manual Annotation (the \texttt{manual} step)}
+
+When you run the \texttt{manual} step, a window opens showing the current image. If
+template matching has already been run, those results are pre-loaded as a starting point.
+
+\subsection*{Annotation Modes}
+
+There are four types of markers you can place:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Key} & \textbf{Use for} \\
+\midrule
+Tooth        & \texttt{1} & A tooth \\
+Gap          & \texttt{2} & A gap between teeth \\
+Center Tooth & \texttt{3} & The central-most tooth (only one allowed) \\
+Center Gap   & \texttt{4} & The central-most gap (only one allowed) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Keyboard Shortcuts}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Key} & \textbf{Action} \\
+\midrule
+\texttt{1} / \texttt{2} / \texttt{3} / \texttt{4} & Switch to tooth / gap / center tooth / center gap mode \\
+\texttt{Tab}        & Cycle through modes in order \\
+\texttt{Space}      & Toggle boxes on/off (view image without overlays) \\
+\texttt{S}          & Save and close current image \\
+\texttt{Q}          & Quit without saving \\
+\texttt{Esc}        & Close current image without saving \\
+$\leftarrow$ arrow  & Save and go to previous image \\
+$\rightarrow$ arrow & Save and go to next image \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Mouse Controls}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Left click} on empty space: place a marker of the current mode
+  \item \textbf{Left click} inside an existing box: delete that marker
+\end{itemize}
+
+\begin{warnbox}
+\textbf{Always save before closing} using \texttt{S} or the arrow keys. \texttt{Q} and
+\texttt{Esc} exit without saving the \emph{current} image, which will cause \texttt{fitproj}
+to fail for that image if no previous annotation exists for it. Images you navigated
+through using the arrow keys are saved automatically and are not affected.
+\end{warnbox}
+
+\begin{tipbox}
+\textbf{Window size:} The annotation window opens at the width set by \texttt{MAX\_WIDTH}
+in \texttt{utils.py} (default: 800 pixels), or the value passed via \texttt{--width} on
+the command line. If the image appears too small, try \texttt{python main.py manual --width 1200}
+or a larger value. Avoid resizing the window manually by dragging its edges, as this will
+cause click positions to be misaligned with markers.
+\end{tipbox}
+
+% -----------------------------------------------------------------------
+\section{Tooth Templates}
+
+The \texttt{template/} folder contains small image patches of individual teeth used
+by the \texttt{match} step to automatically locate teeth in each image. The current
+templates were created from images produced with the standard staining protocol used
+in the lab.
+
+\subsection*{When to add templates}
+
+If you notice that a consistent type or shape of tooth is frequently missed by the
+automated matching, adding one or more example images of that tooth to the
+\texttt{template/} folder will help the matcher find it. Templates should be:
+
+\begin{itemize}[leftmargin=*]
+  \item Small crops of a single tooth (not multiple teeth)
+  \item Representative of the appearance you want to detect
+  \item Saved as \texttt{.jpg} or \texttt{.png}
+\end{itemize}
+
+\subsection*{Using unstained images}
+
+If you are working with unstained wax bites, the existing templates are unlikely to
+produce good results since tooth appearance will differ significantly. In this case,
+create a new set of templates from your unstained images and either replace or
+supplement the existing ones in the \texttt{template/} folder. The \texttt{manual}
+step can always be used to correct or replace the automated results regardless of
+template quality.
+
+% -----------------------------------------------------------------------
+\section{Interactive Analysis (the \texttt{analyze} step)}
+
+Running \texttt{python main.py analyze} generates four plots and opens them in
+interactive windows:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Arclength plot} --- tooth positions in arclength coordinates over time
+  \item \textbf{Index plot} --- tooth positions by index over time
+  \item \textbf{Eruption plot} --- eruption events colored by time since last eruption
+  \item \textbf{Fall-out plot} --- tooth loss events colored by time since last loss
+\end{itemize}
+
+\subsection*{Interacting with the plots}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Left click} on a point: opens the projected 1D image for that date
+  \item \textbf{Left click and drag} across a range of dates: opens the projected 1D
+        images for all dates in the selected range, stacked vertically and aligned to
+        the same width. This is useful for visually comparing annotations across nearby
+        days and identifying errors such as a tooth misidentified as a gap, or a missed
+        gap causing all teeth distal to it to appear shifted relative to other days.
+  \item \textbf{Right click} (ctrl+click on Mac): opens the manual annotation tool for
+        that date. Note: changes will not appear in the plots until you re-run
+        \texttt{format} or \texttt{analyze}.
+\end{itemize}
+
+\begin{tipbox}
+The matplotlib plot windows also have a built-in toolbar that allows you to zoom and
+pan within the plots. Look for the toolbar at the bottom of each plot window.
+\end{tipbox}
+
+% -----------------------------------------------------------------------
+\section{Troubleshooting}
+
+\begin{description}[leftmargin=0pt, style=nextline]
+
+  \item[\texttt{ModuleNotFoundError} when running the app]
+    The virtual environment is not activated. Make sure you see \texttt{(venv)} at
+    the start of your command line.
+    macOS: \texttt{source venv/bin/activate} \quad
+    Windows: \texttt{venv\textbackslash Scripts\textbackslash activate.bat}
+
+  \item[\texttt{AssertionError: manual data.csv does not exist}]
+    The \texttt{fitproj} step cannot find annotation data for one or more images.
+    This usually means the \texttt{manual} step was exited with \texttt{Esc} or
+    \texttt{Q} rather than saved with \texttt{S} or the arrow keys. Re-run
+    \texttt{python main.py manual} and save each image with \texttt{S}.
+
+  \item[\texttt{python} not recognized (Windows)]
+    Python was not added to PATH during installation. Uninstall Python and reinstall,
+    making sure to check ``Add Python to PATH'' at the bottom of the installer window.
+
+  \item[Image appears too small or too large]
+    Use the \texttt{--width} flag to set a comfortable window size, for example:
+    \texttt{python main.py manual --width 1200}. A good starting point is roughly half
+    your screen width. Once you find a value that works, update \texttt{MAX\_WIDTH} in
+    \texttt{utils.py} to make it the default.
+
+  \item[Click positions are misaligned with markers]
+    This can happen if the annotation window has been manually resized by dragging its
+    edges. Close the window and reopen it without resizing. If the problem persists,
+    try a different \texttt{--width} value. This issue is particularly common over
+    remote desktop connections.
+
+  \item[Python not found when connecting remotely (Windows)]
+    Python may have been installed for a specific user account rather than for all users.
+    Ask an administrator to reinstall Python with the ``Install for all users'' option
+    checked.
+
+  \item[\texttt{RuntimeError: Unable to fit a Hyperbola or Parabola}]
+    The \texttt{fitproj} step detected a circle or ellipse instead of a hyperbola.
+    This is usually caused by annotation errors. Open the image in the \texttt{manual}
+    step, check for misplaced markers (especially any that are far from the dental arch),
+    correct them, save, and re-run \texttt{fitproj}.
+
+  \item[A window appears and immediately closes]
+    Look at the terminal for an error message. If you see a traceback (lines beginning
+    with \texttt{File "..."}), note the last few lines --- they identify the specific
+    error. Refer to this guide or contact the developer.
+
+  \item[Plots are empty or show no data]
+    Make sure you have run \texttt{fitproj} on all images before running \texttt{format}
+    or \texttt{analyze}. Also check that image filenames follow the \texttt{MM\_DD\_YYYY}
+    format.
+
+\end{description}
+
+% -----------------------------------------------------------------------
+\section*{Quick Reference}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Command} & \textbf{What it does} \\
+\midrule
+\texttt{python main.py} & Run full pipeline on all images \\
+\texttt{python main.py match} & Template matching, all images \\
+\texttt{python main.py manual} & Manual annotation, all images \\
+\texttt{python main.py manual --width 1200} & Manual annotation with custom window width \\
+\texttt{python main.py fitproj} & Fit \& project, all images \\
+\texttt{python main.py format} & Generate plots \\
+\texttt{python main.py analyze} & Interactive plot viewer \\
+\texttt{python main.py -s 2 -n 1 manual} & Manual annotation, image index 2 only \\
+\texttt{python main.py match fitproj} & Match then fitproj, all images \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+\begin{center}
+\small\textcolor{gray}{Source code: \url{https://github.com/ecytryn/Wax-Bite-Image-Processor}}
+\end{center}
+
+\end{document}
