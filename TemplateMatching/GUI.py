@@ -128,6 +128,10 @@ class GUI:
         # reads image, set up mouse callback
         self.image = cv2.imread(img_path)
         cv2.namedWindow(img_name, cv2.WINDOW_NORMAL)
+        if CONFIG.MAX_WIDTH is not None:
+            cv2.resizeWindow(img_name, CONFIG.MAX_WIDTH, 
+                     int(self.image.shape[0] * CONFIG.MAX_WIDTH / self.image.shape[1]))
+            cv2.moveWindow(img_name, 200, 50)
         cv2.setMouseCallback(img_name, self.left_click)
         self.mode_index = 0
 
@@ -180,7 +184,8 @@ class GUI:
         """
         defines keyboard logic and waits for one keypress
         """
-        key = cv2.waitKey(0)
+        key = cv2.waitKeyEx(0)
+        print(f"key pressed: {key}", flush=True)
 
         if key == 32: # space
             # if in viewing mode already, store mode 
@@ -234,10 +239,10 @@ class GUI:
         elif key == ord("4"): # 4
             self._curr_mode = Tooth.CENTER_G
             self.mode_index = 3
-        elif (key == 2 and self.index > 0) or (key == 3 and self.index < len(self.file_names) - 1):
-            if key == 2:
+        elif (key in (2, 2424832) and self.index > 0) or (key in (3, 2555904) and self.index < len(self.file_names) - 1):
+            if key in (2, 2424832):
                 new_index = self.index - 1
-            elif key == 3:
+            elif key in (3, 2555904):
                 new_index = self.index + 1
             new_file_name = self.file_names[new_index]
             new_file_type = os.path.splitext(new_file_name)[1]
@@ -402,13 +407,8 @@ class GUI:
             draw = True
             dataset_size = len(self.x)
 
-            # scale click coordinates from window space to image space
-            window_rect = cv2.getWindowImageRect(self.img_name)
-            window_w = window_rect[2]
-            window_h = window_rect[3]
-            clicked_x = clicked_x * self.image.shape[1] / window_w
-            clicked_y = clicked_y * self.image.shape[0] / window_h
-
+            clicked_x = clicked_x / self.ratio 
+            clicked_y = clicked_y / self.ratio
             for index in range(dataset_size):
                 # if the user clicks within a square, delete the square 
                 if (clicked_x >= self.x[index]-self.w[index]/2

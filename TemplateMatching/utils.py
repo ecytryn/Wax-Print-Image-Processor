@@ -40,7 +40,7 @@ class Cross(Enum):
 
 
 # settings/configurations of the program
-@dataclass(frozen=True)
+@dataclass
 class CONFIG:
 
     "TEMPLATE MATCHING"
@@ -67,7 +67,7 @@ class CONFIG:
 
     "GUI"
     SQUARE: int = 30  # side length of default GUI squares
-    MAX_WIDTH: int | None = 800  # max width of window in pixels; increase if image appears too small, decrease if it doesn't fit on screen
+    MAX_WIDTH: int | None = 1200  # max width of window in pixels; increase if image appears too small, decrease if it doesn't fit on screen
 
 
     "FORMAT_PLOT"
@@ -87,3 +87,6 @@ class CONFIG:
     HEIGHT_SIZE: int = 7
     "OTHERS - INITIALIZATION"
     FILE_TYPES = [".jpg", ".png", ".jpeg"] # accepted filetypes for templates and images
+
+def apply_custom_width(width: int) -> None:
+    CONFIG.MAX_WIDTH = width
